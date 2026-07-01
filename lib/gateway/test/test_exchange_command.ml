@@ -44,6 +44,7 @@ let%expect_test "default participant: used when none specified" =
   | Ok command ->
     print_endline [%string "%{command#Exchange_command}"];
     [%expect.unreachable];
+  [%expect.unreachable];
   [%expect {| ERROR: expected: BUY|SELL <symbol> <size> <price> [%{Time.in_force.all_str}] [as <name>] |}]
 ;;
 
@@ -58,6 +59,7 @@ let%expect_test "default participant: explicit as overrides default" =
   | Ok command ->
     print_endline [%string "%{command#Exchange_command}"];
     [%expect.unreachable];
+  [%expect.unreachable];
   [%expect {|
     ERROR: invalid client order id: AAPL
     exception: (Failure "Int.of_string: \"AAPL\"")

@@ -330,9 +330,9 @@ let%expect_test "e2e: many clients submit orders concurrently" =
      Please change this test to not include a backtrace. *)
   (monitor.ml.Error
     (runtime-lib/runtime.ml.E "got unexpected result"
-      ((expected 5) (got 4) (Loc lib/gateway/test/test_end_to_end.ml:330:19)))
+      ((expected 5) (got 4) (Loc lib/gateway/test/test_end_to_end.ml:325:19)))
     ("Raised at Ppx_assert_lib__Runtime.test_result__stack in file \"runtime-lib/runtime.ml\", line 131, characters 27-83"
-      "Called from Jsip_gateway_test__Test_end_to_end.(fun) in file \"lib/gateway/test/test_end_to_end.ml\", line 330, characters 19-22"
+      "Called from Jsip_gateway_test__Test_end_to_end.(fun) in file \"lib/gateway/test/test_end_to_end.ml\", line 325, characters 19-22"
       "Caught by monitor Monitor.protect at file \"lib/test_harness/src/e2e_helpers.ml\", line 9, characters 2-2"))
   Raised at Base__Result.ok_exn in file "src/result.ml" (inlined), line 135, characters 17-26
   Called from Async_unix__Thread_safe.block_on_async_exn in file "src/thread_safe.ml", line 161, characters 35-75

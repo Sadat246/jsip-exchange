@@ -125,7 +125,7 @@ let%expect_test "feed_event forwards every event verbatim to on_event" =
      (Order_accept (order_id 1)
       (request
        ((symbol AAPL) (participant Alice) (side Buy) (price 15000) (size 10)
-        (client_order_id 0) (time_in_force Day)))))
+        (time_in_force Day) (client_order_id 0)))))
     |}];
   return ()
 ;;
