@@ -6,11 +6,13 @@ type t =
   { market_data_subscribers_by_symbol :
       Exchange_event.t Pipe.Writer.t Bag.t Symbol.Table.t
   ; audit_subscribers : Exchange_event.t Pipe.Writer.t Bag.t
+  ; participant_sessions : Session.t Participant.Table.t
   }
 
 let create () =
   { market_data_subscribers_by_symbol = Symbol.Table.create ()
   ; audit_subscribers = Bag.create ()
+  ; participant_sessions = Participant.Table.create ()
   }
 ;;
 
@@ -65,10 +67,9 @@ let push_to_session t participant event =
   (* TODO: Once sessions have been implemented this function should write the
      event to the appropriate session's pipe. For now we have the server
      binary print these events to stdout while tests can silence them. *)
-  ignore t;
-  print_endline
-    [%string
-      "[for %{participant#Participant}] %{Protocol.format_event event}"]
+  match Hashtbl.find t.participant_sessions participant with
+  | None -> ()
+  | Some session -> Session.push session event
 ;;
 
 let dispatch_event t (event : Exchange_event.t) =
@@ -87,7 +88,10 @@ let dispatch_event t (event : Exchange_event.t) =
       ; symbol = _
       ; remaining_size = _
       ; reason = _
+      ; client_order_id = _
       } ->
+    push_to_session t participant event
+  | Cancel_reject { participant; client_order_id = _; reason = _ } ->
     push_to_session t participant event
   | Fill
       { fill_id = _
@@ -99,12 +103,51 @@ let dispatch_event t (event : Exchange_event.t) =
       ; aggressor_side = _
       ; resting_order_id = _
       ; resting_participant
+      ; aggressor_client_order_id = _
+      ; resting_client_order_id = _
       } ->
     push_to_session t aggressor_participant event;
     push_to_session t resting_participant event
 ;;
 
 let dispatch t events = List.iter events ~f:(dispatch_event t)
+
+let clean_up_session' t session =
+  let participant = Session.participant session in
+  Hashtbl.remove t.participant_sessions participant;
+  Session.close session
+;;
+
+let clean_up_session t session =
+  Deferred.return (clean_up_session' t session)
+;;
+
+let set_up_session t participant =
+  Option.iter
+    (Hashtbl.find t.participant_sessions participant)
+    ~f:(fun session ->
+      clean_up_session' t session;
+      let session = Session.create participant in
+      Hashtbl.set t.participant_sessions ~key:participant ~data:session);
+  Deferred.unit
+;;
+
+let session_in_table t participant =
+  Hashtbl.find t.participant_sessions participant
+;;
+
+let register_session t participant session =
+  match session_in_table t participant with
+  | None ->
+    Hashtbl.set t.participant_sessions ~key:participant ~data:session;
+    Ok ()
+  | Some _session -> Or_error.error_string "Session already exists"
+;;
+
+(* let%bind () = match Hashtbl.find t.participant_sessions participant with |
+   None -> () | Some session -> clean_up_session' t session in let session =
+   Session.create participant in Hashtbl.set t.participant_sessions
+   ~key:participant ~data:session; Deferred.unit *)
 
 module For_testing = struct
   let audit_subscriber_count t = Bag.length t.audit_subscribers

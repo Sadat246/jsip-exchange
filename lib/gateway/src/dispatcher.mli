@@ -54,6 +54,11 @@ val subscribe_audit : t -> Exchange_event.t Pipe.Reader.t
     Each session lookup is O(1) and independent of subscriber count. *)
 val dispatch : t -> Exchange_event.t list -> unit
 
+val clean_up_session : t -> Session.t -> unit Deferred.t
+val set_up_session : t -> Participant.t -> unit Deferred.t
+val session_in_table : t -> Participant.t -> Session.t option
+val register_session : t -> Participant.t -> Session.t -> unit Or_error.t
+
 module For_testing : sig
   val audit_subscriber_count : t -> int
 end

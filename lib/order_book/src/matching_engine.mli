@@ -29,3 +29,9 @@ val submit : t -> Order.Request.t -> Exchange_event.t list
 (** The order book for a given symbol, or [None] if the symbol is not traded
     on this engine. *)
 val book : t -> Symbol.t -> Order_book.t option
+
+val cancel
+  :  t
+  -> participant:Participant.t
+  -> client_order_id:Client_order_id.t
+  -> Exchange_event.t list

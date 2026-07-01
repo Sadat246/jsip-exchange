@@ -16,7 +16,8 @@ module Category = struct
   ;;
 
   let of_event : Exchange_event.t -> t = function
-    | Order_accept _ | Order_cancel _ | Order_reject _ -> Order_lifecycle
+    | Order_accept _ | Order_cancel _ | Order_reject _ | Cancel_reject _ ->
+      Order_lifecycle
     | Fill _ -> Trade
     | Best_bid_offer_update _ | Trade_report _ -> Market_data
   ;;
@@ -31,6 +32,7 @@ module Color = struct
     | Blue
     | Magenta
     | Cyan
+    | Orange
   [@@deriving sexp_of, compare, equal, enumerate]
 
   let to_string = function
@@ -41,6 +43,7 @@ module Color = struct
     | Blue -> "blue"
     | Magenta -> "magenta"
     | Cyan -> "cyan"
+    | Orange -> "orange"
   ;;
 
   let of_event : Exchange_event.t -> t = function
@@ -50,6 +53,7 @@ module Color = struct
     | Order_reject _ -> Red
     | Best_bid_offer_update _ -> Blue
     | Trade_report _ -> Magenta
+    | Cancel_reject _ -> Orange
   ;;
 end
 

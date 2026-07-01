@@ -29,17 +29,13 @@ let ( - ) = Int.( - )
 let ( * ) price qty = price * qty
 
 let is_more_aggressive side ~price ~than =
-  ignore side;
-  ignore price;
-  ignore than;
-  failwith "TODO: implement Price.is_more_aggressive"
+  match side with Side.Buy -> price > than | Sell -> price < than
 ;;
 
 let is_marketable side ~price ~resting_price =
-  ignore side;
-  ignore price;
-  ignore resting_price;
-  failwith "TODO: implement Price.is_marketable"
+  match side with
+  | Side.Buy -> price >= resting_price
+  | Sell -> price <= resting_price
 ;;
 
 let to_string_dollar t =

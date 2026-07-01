@@ -77,3 +77,40 @@ let%expect_test "audit-log RPC" =
     |}];
   return ()
 ;;
+
+let%expect_test "login RPC" =
+  print_s
+    [%sexp
+      (Rpc.Rpc.shapes Rpc_protocol.login_rpc : Async_rpc_kernel.Rpc_shapes.t)];
+  [%expect
+    {|(Rpc (query d9a8da25d5656b016fb4dbdc2e4197fb)
+     (response a77b3b6e3753246ce7ec1f3467c939eb))|}];
+  return ()
+;;
+
+let%expect_test "session_feed RPC" =
+  print_s
+    [%sexp
+      (Rpc.Pipe_rpc.shapes Rpc_protocol.session_feed_rpc
+       : Async_rpc_kernel.Rpc_shapes.t)];
+  [%expect
+    {|
+    (Streaming_rpc (query 86ba5df747eec837f0b391dd49f33f9e)
+    (initial_response 86ba5df747eec837f0b391dd49f33f9e)     
+    (update_response 433bb29b66b02afe94a1cd264b00ab2b)
+    (error 52966f4a49a77bfdff668e9cc61511b3))
+  |}];
+  return ()
+;;
+
+let%expect_test "cancel-order RPC" =
+  print_s
+    [%sexp
+      (Rpc.Rpc.shapes Rpc_protocol.cancel_order_rpc
+       : Async_rpc_kernel.Rpc_shapes.t)];
+  [%expect
+    {| 
+  (Rpc (query 698cfa4093fe5e51523842d37b92aeac)
+     (response 27f76252e5181aab209cd62aa6e42268)) |}];
+  return ()
+;;

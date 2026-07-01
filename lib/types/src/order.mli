@@ -16,10 +16,13 @@ module Request : sig
     ; side : Side.t
     ; price : Price.t
     ; size : Size.t (** Number of shares/units. Must be positive. *)
+    ; client_order_id : Client_order_id.t
     ; time_in_force : Time_in_force.t
     }
   [@@deriving sexp, bin_io]
 
+  val client_order_id : t -> Client_order_id.t
+  val participant : t -> Participant.t
   val to_string : t -> string
 end
 
@@ -45,11 +48,12 @@ val side : t -> Side.t
 val price : t -> Price.t
 val size : t -> Size.t
 val remaining_size : t -> Size.t
-val time_in_force : t -> Time_in_force.t
+val client_order_id : t -> Client_order_id.t
 
 (** {2 Mutation}
 
     The matching engine updates remaining size as fills occur. *)
+val time_in_force : t -> Time_in_force.t
 
 (** Reduce the remaining size by [by]. Raises if [by] is larger than
     [remaining_size] or non-positive. *)

@@ -21,6 +21,7 @@ type t =
       ; remaining_size : Size.t
       (** Size that was still unfilled when the order was cancelled. *)
       ; reason : Cancel_reason.t
+      ; client_order_id : Client_order_id.t
       }
   | Order_reject of
       { request : Order.Request.t
@@ -34,6 +35,11 @@ type t =
       { symbol : Symbol.t
       ; price : Price.t
       ; size : Size.t
+      }
+  | Cancel_reject of
+      { participant : Participant.t
+      ; client_order_id : Client_order_id.t
+      ; reason : string
       }
   (** A public trade print. Unlike [Fill], this contains no information about
       the participants — it is what the broader market sees. *)

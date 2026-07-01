@@ -12,11 +12,30 @@ open Jsip_types
 open Jsip_gateway
 
 let run_client ~host ~port ~participant_name =
-  let participant = Participant.of_string participant_name in
   let where_to_connect =
     Tcp.Where_to_connect.of_host_and_port { host; port }
   in
   let%bind conn = Rpc.Connection.client where_to_connect >>| Result.ok_exn in
+  let%bind login_result =
+    Rpc.Rpc.dispatch_exn Rpc_protocol.login_rpc conn participant_name
+  in
+  let participant =
+    match login_result with Error err -> Error.raise err | Ok p -> p
+  in
+  let%bind session_feed_result, _metadata =
+    Rpc.Pipe_rpc.dispatch_exn Rpc_protocol.session_feed_rpc conn ()
+  in
+  don't_wait_for
+    (Pipe.iter_without_pushback session_feed_result ~f:(fun event ->
+       match event with
+       | Exchange_event.Fill fill ->
+         let message =
+           match Fill.to_participant_view fill participant with
+           | None -> ""
+           | Some msg -> msg
+         in
+         print_endline message
+       | _ -> print_endline [%string "%{Protocol.format_event event}"]));
   print_endline
     [%string
       {|

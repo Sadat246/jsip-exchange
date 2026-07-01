@@ -18,6 +18,8 @@ type t =
   ; aggressor_side : Side.t
   ; resting_order_id : Order_id.t
   ; resting_participant : Participant.t
+  ; aggressor_client_order_id : Client_order_id.t
+  ; resting_client_order_id : Client_order_id.t
   }
 [@@deriving sexp, bin_io]
 
@@ -27,3 +29,5 @@ val to_string : t -> string
 
 (** The total notional value of the fill in cents (price * size). *)
 val notional_cents : t -> int
+
+val to_participant_view : t -> Participant.t -> string option

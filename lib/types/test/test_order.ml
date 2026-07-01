@@ -8,6 +8,7 @@ let make_request
   ?(side = Side.Buy)
   ?(price_cents = 15000)
   ?(size = 100)
+  ?(cid = 0)
   ?(time_in_force = Time_in_force.Day)
   ()
   : Order.Request.t
@@ -17,6 +18,7 @@ let make_request
   ; side
   ; price = Price.of_int_cents price_cents
   ; size = Size.of_int size
+  ; client_order_id = Client_order_id.of_int cid
   ; time_in_force
   }
 ;;

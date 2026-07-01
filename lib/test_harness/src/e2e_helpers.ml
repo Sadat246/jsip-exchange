@@ -1,5 +1,6 @@
 open! Core
 open! Async
+open Jsip_types
 open Jsip_gateway
 
 let with_server ~symbols f =
@@ -12,12 +13,27 @@ let with_server ~symbols f =
 
 type client = { conn : Rpc.Connection.t }
 
-let connect_as ~port _participant =
+let login conn participant =
+  Rpc.Rpc.dispatch_exn Rpc_protocol.login_rpc conn participant >>| ok_exn
+;;
+
+let connect_as ~port (participant : Participant.t) =
   let where =
     Tcp.Where_to_connect.of_host_and_port { host = "localhost"; port }
   in
-  let%map conn = Rpc.Connection.client where >>| Result.ok_exn in
-  { conn }
+  let%bind conn = Rpc.Connection.client where >>| Result.ok_exn in
+  let client = { conn } in
+  let%bind (_ : Participant.t) =
+    login client.conn (Participant.to_string participant)
+  in
+  let%bind session_feed, _metadata =
+    Rpc.Pipe_rpc.dispatch_exn Rpc_protocol.session_feed_rpc client.conn ()
+  in
+  don't_wait_for
+    (Pipe.iter_without_pushback session_feed ~f:(fun event ->
+       let e = Protocol.format_event event in
+       print_endline [%string "[%{participant#Participant}] %{e}"]));
+  return client
 ;;
 
 let connection client = client.conn

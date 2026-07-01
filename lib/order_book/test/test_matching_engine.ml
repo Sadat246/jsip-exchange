@@ -249,7 +249,7 @@ let%expect_test "price priority: naive impl matches first-found, not best" =
     ACCEPTED id=1 AAPL SELL 100@$10.00 DAY
     ACCEPTED id=2 AAPL SELL 100@$10.05 DAY
     ACCEPTED id=3 AAPL BUY 100@$10.05 DAY
-    FILL fill_id=1 AAPL $10.05 x100 aggressor=3(Alice) BUY resting=2(Bob)
+    FILL fill_id=1 AAPL $10.00 x100 aggressor=3(Alice) BUY resting=1(Charlie)
     |}]
 ;;
 

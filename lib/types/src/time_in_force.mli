@@ -17,3 +17,5 @@ type t =
 
 (** Does this time-in-force allow the order to rest on the book? *)
 val rests_on_book : t -> bool
+
+val all_str : string

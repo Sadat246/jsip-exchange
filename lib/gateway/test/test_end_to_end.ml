@@ -92,6 +92,114 @@ let%expect_test "e2e: three clients, sequential orders, shared book" =
 ;;
 
 (* ---------------------------------------------------------------- *)
+(* Cancel tests *)
+(* ---------------------------------------------------------------- *)
+
+let%expect_test "e2e: cancel by client order id sends Order_cancel to \
+                 session feed"
+  =
+  with_server ~symbols:[ Harness.aapl ] (fun ~server:_ ~port ->
+    let%bind bob = connect_as ~port Harness.bob in
+    let client_order_id = Client_order_id.of_string "1" in
+    let%bind () =
+      rpc_submit
+        bob
+        (Harness.sell
+           ~price_cents:15000
+           ~participant:Harness.bob
+           ~client_order_id
+           ())
+    in
+    [%expect {| [Bob] ACCEPTED id=1 AAPL SELL 100@$150.00 1 DAY |}];
+    let%bind result =
+      Rpc.Rpc.dispatch_exn
+        Rpc_protocol.cancel_order_rpc
+        (connection bob)
+        client_order_id
+    in
+    print_s [%sexp (result : unit Or_error.t)];
+    [%expect
+      {|
+      [Bob] CANCELLED id=1 AAPL remaining=100 reason=PARTICIPANT_REQUESTED
+      (Ok ())
+      |}];
+    return ())
+;;
+
+(* duplicate client order id *)
+let%expect_test "e2e: duplicate client order id sends Order_reject to \
+                 session feed"
+  =
+  with_server ~symbols:[ Harness.aapl ] (fun ~server:_ ~port ->
+    let%bind bob = connect_as ~port Harness.bob in
+    let client_order_id = Client_order_id.of_string "1" in
+    let%bind () =
+      rpc_submit
+        bob
+        (Harness.sell
+           ~price_cents:15000
+           ~participant:Harness.bob
+           ~client_order_id
+           ())
+    in
+    [%expect {| [Bob] ACCEPTED id=1 AAPL SELL 100@$150.00 1 DAY |}];
+    let%bind () =
+      rpc_submit
+        bob
+        (Harness.sell
+           ~price_cents:15010
+           ~participant:Harness.bob
+           ~client_order_id
+           ())
+    in
+    [%expect
+      {|
+      [Bob] REJECTED AAPL SELL 100@$150.10 1 DAY reason=Duplicate ID
+      |}];
+    return ())
+;;
+
+(* ---------------------------------------------------------------- *)
+(* Cancel already-filled order *)
+(* ---------------------------------------------------------------- *)
+let%expect_test "e2e: cancel already-filled order sends not-found rejection" =
+  with_server ~symbols:[ Harness.aapl ] (fun ~server:_ ~port ->
+    let%bind bob = connect_as ~port Harness.bob in
+    let%bind alice = connect_as ~port Harness.alice in
+    let bob_client_order_id = Client_order_id.of_string "1" in
+    let%bind () =
+      rpc_submit
+        bob
+        (Harness.sell
+           ~price_cents:15000
+           ~participant:Harness.bob
+           ~client_order_id:bob_client_order_id
+           ())
+    in
+    [%expect {| [Bob] ACCEPTED id=1 AAPL SELL 100@$150.00 1 DAY |}];
+    let%bind () = rpc_submit alice (Harness.buy ~price_cents:15000 ()) in
+    [%expect
+      {|
+      [Alice] ACCEPTED id=2 AAPL BUY 100@$150.00 0 DAY
+      [Alice] FILL fill_id=1 AAPL $150.00 x100 aggressor=2(Alice) BUY resting=1(Bob)
+      [Bob] FILL fill_id=1 AAPL $150.00 x100 aggressor=2(Alice) BUY resting=1(Bob)
+      |}];
+    let%bind result =
+      Rpc.Rpc.dispatch_exn
+        Rpc_protocol.cancel_order_rpc
+        (connection bob)
+        bob_client_order_id
+    in
+    print_s [%sexp (result : unit Or_error.t)];
+    [%expect
+      {|
+      [Bob] CANCEL_REJECT participant=Bob client_order_id=1 reason=order not found
+      (Ok ())
+      |}];
+    return ())
+;;
+
+(* ---------------------------------------------------------------- *)
 (* Market data subscription tests *)
 (* ---------------------------------------------------------------- *)
 

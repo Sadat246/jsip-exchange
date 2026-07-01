@@ -9,6 +9,7 @@ let make_order
   ~order_id
   ?(size = 100)
   ?(participant = Harness.alice)
+  ?(cid = 0)
   ()
   =
   Order.create
@@ -17,6 +18,7 @@ let make_order
      ; side
      ; price = Price.of_int_cents price_cents
      ; size = Size.of_int size
+     ; client_order_id = Client_order_id.of_int cid
      ; time_in_force = Day
      }
      : Order.Request.t)

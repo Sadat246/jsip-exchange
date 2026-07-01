@@ -57,6 +57,7 @@ val buy
   -> ?symbol:Symbol.t
   -> ?participant:Participant.t
   -> ?time_in_force:Time_in_force.t
+  -> ?client_order_id:Client_order_id.t
   -> unit
   -> Order.Request.t
 
@@ -66,6 +67,7 @@ val sell
   -> ?symbol:Symbol.t
   -> ?participant:Participant.t
   -> ?time_in_force:Time_in_force.t
+  -> ?client_order_id:Client_order_id.t
   -> unit
   -> Order.Request.t
 
