@@ -38,7 +38,7 @@ let%expect_test "events appear in insertion order" =
   [%expect
     {|
     count=6
-    ACCEPTED id=1 AAPL BUY 100@$150.00 DAY
+    ACCEPTED id=1 AAPL BUY 100@$150.00 0 DAY
     FILL fill_id=1 AAPL $150.00 x100 aggressor=2(Alice) BUY resting=1(Bob)
     CANCELLED id=1 AAPL remaining=50 reason=IOC_REMAINDER
     REJECTED AAPL BUY 100@$150.00 reason=unknown symbol
@@ -78,7 +78,7 @@ let%expect_test "filter by category groups variants" =
   print_lines (Event_log.visible_lines log);
   [%expect
     {|
-    ACCEPTED id=1 AAPL BUY 100@$150.00 DAY
+    ACCEPTED id=1 AAPL BUY 100@$150.00 0 DAY
     CANCELLED id=1 AAPL remaining=50 reason=IOC_REMAINDER
     REJECTED AAPL BUY 100@$150.00 reason=unknown symbol
     |}]
@@ -118,7 +118,7 @@ let%expect_test "each event variant renders with its assigned color" =
   print_styled (Event_log.visible_styled_lines log);
   [%expect
     {|
-    [green] ACCEPTED id=1 AAPL BUY 100@$150.00 DAY
+    [green] ACCEPTED id=1 AAPL BUY 100@$150.00 0 DAY
     [cyan] FILL fill_id=1 AAPL $150.00 x100 aggressor=2(Alice) BUY resting=1(Bob)
     [yellow] CANCELLED id=1 AAPL remaining=50 reason=IOC_REMAINDER
     [red] REJECTED AAPL BUY 100@$150.00 reason=unknown symbol

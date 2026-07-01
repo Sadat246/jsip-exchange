@@ -18,8 +18,8 @@ let make_request
   ; side
   ; price = Price.of_int_cents price_cents
   ; size = Size.of_int size
-  ; client_order_id = Client_order_id.of_int cid
   ; time_in_force
+  ; client_order_id = Client_order_id.of_int cid
   }
 ;;
 

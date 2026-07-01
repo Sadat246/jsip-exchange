@@ -86,8 +86,8 @@ let parse_command line =
             ; side
             ; price
             ; size = Size.of_int size
-            ; client_order_id
             ; time_in_force
+            ; client_order_id
             }
             : Order.Request.t)
        | _ ->

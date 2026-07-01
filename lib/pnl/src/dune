@@ -1,0 +1,6 @@
+(library
+ (name jsip_pnl)
+ (public_name jsip-exchange.jsip_pnl)
+ (libraries core jsip_types)
+ (preprocess
+  (pps ppx_jane)))

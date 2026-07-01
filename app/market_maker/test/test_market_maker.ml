@@ -23,12 +23,12 @@ let%expect_test "seed_book: places symmetric bids and asks around fair value"
     let%bind () = Market_maker.seed_book default_config (connection mm) in
     [%expect
       {|
-      [for MarketMaker] ACCEPTED id=1 AAPL BUY 100@$149.90 DAY
-      [for MarketMaker] ACCEPTED id=2 AAPL SELL 100@$150.10 DAY
-      [for MarketMaker] ACCEPTED id=3 AAPL BUY 100@$149.89 DAY
-      [for MarketMaker] ACCEPTED id=4 AAPL SELL 100@$150.11 DAY
-      [for MarketMaker] ACCEPTED id=5 AAPL BUY 100@$149.88 DAY
-      [for MarketMaker] ACCEPTED id=6 AAPL SELL 100@$150.12 DAY
+      [MarketMaker] ACCEPTED id=1 AAPL BUY 100@$149.90 0 DAY
+      [MarketMaker] ACCEPTED id=2 AAPL SELL 100@$150.10 1 DAY
+      [MarketMaker] ACCEPTED id=3 AAPL BUY 100@$149.89 2 DAY
+      [MarketMaker] ACCEPTED id=4 AAPL SELL 100@$150.11 3 DAY
+      [MarketMaker] ACCEPTED id=5 AAPL BUY 100@$149.88 4 DAY
+      [MarketMaker] ACCEPTED id=6 AAPL SELL 100@$150.12 5 DAY
       |}];
     return ())
 ;;

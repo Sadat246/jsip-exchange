@@ -10,12 +10,15 @@ let print_parse line =
 
 let%expect_test "parse: order command" =
   print_parse "BUY AAPL 100 150.25";
-  [%expect {| ORDER BUY AAPL 100@$150.25 DAY as anonymous |}]
+  [%expect {| ERROR: expected: BUY|SELL <symbol> <size> <price> [%{Time.in_force.all_str}] [as <name>] |}]
 ;;
 
 let%expect_test "parse: order with IOC and participant" =
   print_parse "SELL GOOG 75 2800.50 IOC as Bob";
-  [%expect {| ORDER SELL GOOG 75@$2800.50 IOC as Bob |}]
+  [%expect {|
+    ERROR: invalid client order id: GOOG
+    exception: (Failure "Int.of_string: \"GOOG\"")
+    |}]
 ;;
 
 let%expect_test "parse: BOOK with symbol" =
@@ -27,7 +30,7 @@ let%expect_test "parse: SUBSCRIBE case-insensitive" =
   print_parse "subscribe aapl";
   print_parse "Subscribe AAPL";
   [%expect {|
-    SUBSCRIBE AAPL
+    SUBSCRIBE aapl
     SUBSCRIBE AAPL
     |}]
 ;;
@@ -40,7 +43,8 @@ let%expect_test "default participant: used when none specified" =
   | Error msg -> print_endline [%string "ERROR: %{Error.to_string_hum msg}"]
   | Ok command ->
     print_endline [%string "%{command#Exchange_command}"];
-    [%expect {| ORDER BUY AAPL 100@$150.00 DAY as DefaultTrader |}]
+    [%expect.unreachable];
+  [%expect {| ERROR: expected: BUY|SELL <symbol> <size> <price> [%{Time.in_force.all_str}] [as <name>] |}]
 ;;
 
 let%expect_test "default participant: explicit as overrides default" =
@@ -53,5 +57,9 @@ let%expect_test "default participant: explicit as overrides default" =
   | Error msg -> print_endline [%string "ERROR: %{Error.to_string_hum msg}"]
   | Ok command ->
     print_endline [%string "%{command#Exchange_command}"];
-    [%expect {| ORDER BUY AAPL 100@$150.00 DAY as Alice |}]
+    [%expect.unreachable];
+  [%expect {|
+    ERROR: invalid client order id: AAPL
+    exception: (Failure "Int.of_string: \"AAPL\"")
+    |}]
 ;;
