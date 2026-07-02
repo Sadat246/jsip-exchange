@@ -4,6 +4,7 @@ open! Core
 open! Async
 open Jsip_types
 open Jsip_fundamental
+open Jsip_order_book
 open Jsip_bot_runtime
 open! Jsip_bots
 
@@ -105,5 +106,46 @@ let%expect_test "make_recording_bot wires up a runnable bot" =
   in
   print_submitted submitted;
   [%expect {| |}];
+  return ()
+;;
+
+(* One [on_tick] with the fundamental pinned at $150.00. Every order must rest
+   ($5.00+ away from fair value, so non-marketable), be [Day], and carry a
+   distinct client order id. With [level_spacing_cents = 10] successive pairs
+   march onto new price levels; sides alternate so both halves of the book
+   grow. *)
+let%expect_test "book_filler floods non-marketable resting Day orders" =
+  let config : Book_filler.Config.t =
+    { symbols = [ aapl ]
+    ; orders_per_tick = 6
+    ; order_size = 1
+    ; price_offset_cents = 500
+    ; level_spacing_cents = 10
+    ; next_client_order_id = ref 0
+    }
+  in
+  let bot, submitted, _cancelled =
+    make_recording_bot (module Book_filler) config ~initial_price_cents:15000 ()
+  in
+  let context = Bot_runtime.For_testing.context_of bot in
+  let%bind () = Book_filler.on_tick config context in
+  List.iter (List.rev !submitted) ~f:(fun (req : Order.Request.t) ->
+    printf
+      !"cid=%{Client_order_id} %{Side} %{Symbol} %d@%{Price#dollar} \
+        %{Time_in_force}\n"
+      req.client_order_id
+      req.side
+      req.symbol
+      (Size.to_int req.size)
+      req.price
+      req.time_in_force);
+  [%expect {|
+    cid=0 BUY AAPL 1@$145.00 DAY
+    cid=1 SELL AAPL 1@$155.00 DAY
+    cid=2 BUY AAPL 1@$144.90 DAY
+    cid=3 SELL AAPL 1@$155.10 DAY
+    cid=4 BUY AAPL 1@$144.80 DAY
+    cid=5 SELL AAPL 1@$155.20 DAY
+    |}];
   return ()
 ;;
