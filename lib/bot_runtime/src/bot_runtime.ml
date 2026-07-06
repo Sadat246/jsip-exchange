@@ -9,7 +9,7 @@ module Context = struct
     ; oracle : Fundamental_oracle.t
     ; rng : Splittable_random.t
     ; dispatch_submit : Order.Request.t -> unit Deferred.Or_error.t
-    ; dispatch_cancel : Order_id.t -> unit Deferred.Or_error.t
+    ; dispatch_cancel : Client_order_id.t -> unit Deferred.Or_error.t
     }
 
   let participant t = t.participant
@@ -91,4 +91,14 @@ let start t =
 
 module For_testing = struct
   let context_of t = t.context
+
+  let manual_tick t =
+    let (Packed { bot = (module B); config }) = t.bot in
+    B.on_tick config t.context
+  ;;
+
+  let manual_start t =
+    let (Packed { bot = (module B); config }) = t.bot in
+    B.on_start config t.context
+  ;;
 end

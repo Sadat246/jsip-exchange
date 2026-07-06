@@ -75,15 +75,24 @@ let make_order (config : Config.t) context ~symbol ~index : Order.Request.t =
     | Buy -> Int.max 1 (fundamental_cents - distance)
     | Sell -> fundamental_cents + distance
   in
-  { symbol
+  { client_order_id = fresh_client_order_id config
+  ; symbol
   ; participant = Context.participant context
   ; side
   ; price = Price.of_int_cents price_cents
   ; size = Size.of_int config.order_size
   ; time_in_force = Day
-  ; client_order_id = fresh_client_order_id config
   }
 ;;
+
+(* Cap on how many submits from a single tick are in flight at once. With a
+   large [orders_per_tick], firing every submit in parallel would pile all
+   the RPC dispatches onto the bot's own scheduler and connection write
+   buffer, stressing the bot instead of the exchange we mean to pressure.
+   Bounding concurrency keeps the bot healthy and delivers a steady load to
+   the server (well above any realistic [orders_per_tick] this stays
+   equivalent to fully parallel). *)
+let max_concurrent_submits = 64
 
 (* Each tick, fire [orders_per_tick] resting orders, round-robining across
    the configured symbols so every book grows. [submit] is one-way, so we do
@@ -93,7 +102,7 @@ let on_tick (config : Config.t) context =
   let symbols = Array.of_list config.symbols in
   let num_symbols = Array.length symbols in
   Deferred.List.iter
-    ~how:`Parallel
+    ~how:(`Max_concurrent_jobs max_concurrent_submits)
     (List.init config.orders_per_tick ~f:Fn.id)
     ~f:(fun index ->
       let symbol = symbols.(index % num_symbols) in

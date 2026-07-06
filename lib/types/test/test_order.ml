@@ -8,18 +8,18 @@ let make_request
   ?(side = Side.Buy)
   ?(price_cents = 15000)
   ?(size = 100)
-  ?(cid = 0)
   ?(time_in_force = Time_in_force.Day)
+  ?(client_order_id = 1)
   ()
   : Order.Request.t
   =
-  { symbol = Symbol.of_string symbol
+  { client_order_id = Client_order_id.of_int client_order_id
+  ; symbol = Symbol.of_string symbol
   ; participant = Participant.of_string participant
   ; side
   ; price = Price.of_int_cents price_cents
   ; size = Size.of_int size
   ; time_in_force
-  ; client_order_id = Client_order_id.of_int cid
   }
 ;;
 

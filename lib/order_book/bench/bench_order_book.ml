@@ -54,13 +54,13 @@ let book_with_n_asks ?(min_price = 10_000) n =
   for i = 1 to n do
     let order =
       Order.create
-        { symbol = aapl
+        { client_order_id = Client_order_id.of_int i
+        ; symbol = aapl
         ; participant = bob
         ; side = Sell
         ; price = Price.of_int_cents (min_price + i)
         ; size = Size.of_int 100
         ; time_in_force = Day
-        ; client_order_id = Client_order_id.of_int i
         }
         ~order_id:(Order_id.Generator.next gen)
     in
@@ -76,13 +76,14 @@ let engine_with_n_asks ?(min_price = 10_000) n =
     ignore
       (Matching_engine.submit
          engine
-         { symbol = aapl
+         ~participant:bob
+         { client_order_id = Client_order_id.of_int i
+         ; symbol = aapl
          ; participant = bob
          ; side = Sell
          ; price = Price.of_int_cents (min_price + i)
          ; size = Size.of_int 100
          ; time_in_force = Day
-         ; client_order_id = Client_order_id.of_int i
          }
        : Exchange_event.t list)
   done;
@@ -99,13 +100,13 @@ let bench_find_match ~n =
   (* Incoming buy at a price that matches the best ask *)
   let incoming =
     Order.create
-      { symbol = aapl
+      { client_order_id = Client_order_id.of_int (n + 1)
+      ; symbol = aapl
       ; participant = alice
       ; side = Buy
       ; price = Price.of_int_cents (min_price + n)
       ; size = Size.of_int 100
       ; time_in_force = Ioc
-      ; client_order_id = Client_order_id.of_int 10
       }
       ~order_id:(Order_id.Generator.next gen)
   in
@@ -119,13 +120,13 @@ let bench_find_match_no_cross ~n =
   (* Incoming buy at a price below all asks — no match possible *)
   let incoming =
     Order.create
-      { symbol = aapl
+      { client_order_id = Client_order_id.of_int (n + 1)
+      ; symbol = aapl
       ; participant = alice
       ; side = Buy
       ; price = Price.of_int_cents (min_price - 1)
       ; size = Size.of_int 100
       ; time_in_force = Ioc
-      ; client_order_id = Client_order_id.of_int 20
       }
       ~order_id:(Order_id.Generator.next gen)
   in
@@ -145,13 +146,13 @@ let bench_add_remove ~n =
   let book, gen = book_with_n_asks ~min_price n in
   let order =
     Order.create
-      { symbol = aapl
+      { client_order_id = Client_order_id.of_int 1
+      ; symbol = aapl
       ; participant = alice
       ; side = Sell
       ; price = Price.of_int_cents (min_price + 500)
       ; size = Size.of_int 100
       ; time_in_force = Day
-      ; client_order_id = Client_order_id.of_int 25
       }
       ~order_id:(Order_id.Generator.next gen)
   in
@@ -179,13 +180,14 @@ let bench_submit_ioc_cross ~n =
        let events =
          Matching_engine.submit
            engine
-           { symbol = aapl
+           ~participant:alice
+           { client_order_id = Client_order_id.of_int 1
+           ; symbol = aapl
            ; participant = alice
            ; side = Buy
            ; price = Price.of_int_cents max_price
            ; size = Size.of_int 100
            ; time_in_force = Ioc
-           ; client_order_id = Client_order_id.of_int 30
            }
        in
        ignore (events : Exchange_event.t list);
@@ -193,13 +195,14 @@ let bench_submit_ioc_cross ~n =
        ignore
          (Matching_engine.submit
             engine
-            { symbol = aapl
+            ~participant:bob
+            { client_order_id = Client_order_id.of_int 1
+            ; symbol = aapl
             ; participant = bob
             ; side = Sell
             ; price = Price.of_int_cents !next_price
             ; size = Size.of_int 100
             ; time_in_force = Day
-            ; client_order_id = Client_order_id.of_int 13
             }
           : Exchange_event.t list);
        next_price := !next_price + 1;
@@ -213,13 +216,14 @@ let bench_submit_ioc_no_match ~n =
     ignore
       (Matching_engine.submit
          engine
-         { symbol = aapl
+         ~participant:alice
+         { client_order_id = Client_order_id.of_int 1
+         ; symbol = aapl
          ; participant = alice
          ; side = Buy
          ; price = Price.of_int_cents (min_price - 1)
          ; size = Size.of_int 100
          ; time_in_force = Ioc
-         ; client_order_id = Client_order_id.of_int 12
          }
        : Exchange_event.t list))
 ;;
@@ -233,13 +237,14 @@ let bench_submit_sweep ~n =
     ignore
       (Matching_engine.submit
          !engine
-         { symbol = aapl
+         ~participant:alice
+         { client_order_id = Client_order_id.of_int 1
+         ; symbol = aapl
          ; participant = alice
          ; side = Buy
          ; price = Price.of_int_cents 99_999
          ; size = Size.of_int (n * 100)
          ; time_in_force = Ioc
-         ; client_order_id = Client_order_id.of_int 21
          }
        : Exchange_event.t list);
     (* Re-seed entire book *)
@@ -255,13 +260,13 @@ let bench_find_match_alloc ~n =
   let book, gen = book_with_n_asks ~min_price n in
   let incoming =
     Order.create
-      { symbol = aapl
+      { client_order_id = Client_order_id.of_int (n + 1)
+      ; symbol = aapl
       ; participant = alice
       ; side = Buy
       ; price = Price.of_int_cents (min_price + n)
       ; size = Size.of_int 100
       ; time_in_force = Ioc
-      ; client_order_id = Client_order_id.of_int 22
       }
       ~order_id:(Order_id.Generator.next gen)
   in

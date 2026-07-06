@@ -11,6 +11,12 @@ open! Core
 open! Async
 open Jsip_types
 
+(** Establish identity on this connection. The client sends a participant
+    name (string) and the server returns the validated [Participant.t], or an
+    error if the name is empty or already taken by another active connection.
+    Subsequent RPCs on the same connection use this identity implicitly. *)
+val login_rpc : (string, Participant.t Or_error.t) Rpc.Rpc.t
+
 (** Submit an order to the exchange.
 
     This is a one-way RPC. The server enqueues the order and returns as soon
@@ -26,6 +32,12 @@ open Jsip_types
     server shutting down, etc. — not domain errors like unknown symbols
     (those arrive as [Order_reject] events on the session feed). *)
 val submit_order_rpc : (Order.Request.t, unit Or_error.t) Rpc.Rpc.t
+
+(** Cancel an order by its [Client_order_id.t]. The participant is inferred
+    from the connection state (set via [login_rpc]). On success, returns the
+    events to publish. On failure (including unknown ID and orders no longer
+    in the book), returns an error. *)
+val cancel_order_rpc : (Client_order_id.t, unit Or_error.t) Rpc.Rpc.t
 
 (** Query the order book for a given symbol. Returns a structured snapshot of
     all resting orders on both sides, if a book for that symbol exists. *)
@@ -51,6 +63,4 @@ val market_data_rpc
     credentials; this simulator does not, but the same intent applies. *)
 val audit_log_rpc : (unit, Exchange_event.t, Error.t) Rpc.Pipe_rpc.t
 
-val login_rpc : (String.t, Participant.t Or_error.t) Rpc.Rpc.t
 val session_feed_rpc : (unit, Exchange_event.t, Error.t) Rpc.Pipe_rpc.t
-val cancel_order_rpc : (Client_order_id.t, unit Or_error.t) Rpc.Rpc.t

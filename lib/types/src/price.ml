@@ -28,13 +28,13 @@ let ( + ) = Int.( + )
 let ( - ) = Int.( - )
 let ( * ) price qty = price * qty
 
-let is_more_aggressive side ~price ~than =
-  match side with Side.Buy -> price > than | Sell -> price < than
+let is_more_aggressive (side : Side.t) ~price ~than =
+  match side with Buy -> price > than | Sell -> price < than
 ;;
 
-let is_marketable side ~price ~resting_price =
+let is_marketable (side : Side.t) ~price ~resting_price =
   match side with
-  | Side.Buy -> price >= resting_price
+  | Buy -> price >= resting_price
   | Sell -> price <= resting_price
 ;;
 

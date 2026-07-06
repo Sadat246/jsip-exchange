@@ -41,7 +41,7 @@ module Context : sig
   (** Cancel one of this bot's resting orders via the exchange's RPC. Same
       one-way shape as [submit]: success/failure of the cancel attempt
       arrives as an event on the session feed. *)
-  val cancel : t -> Order_id.t -> unit Deferred.Or_error.t
+  val cancel : t -> Client_order_id.t -> unit Deferred.Or_error.t
 end
 
 module type Bot = sig
@@ -83,7 +83,7 @@ val create
   -> oracle:Jsip_fundamental.Fundamental_oracle.t
   -> rng:Splittable_random.t
   -> submit:(Order.Request.t -> unit Deferred.Or_error.t)
-  -> cancel:(Order_id.t -> unit Deferred.Or_error.t)
+  -> cancel:(Client_order_id.t -> unit Deferred.Or_error.t)
   -> tick_interval:Time_ns.Span.t
   -> t
 
@@ -99,4 +99,6 @@ val start : t -> unit Deferred.t
 
 module For_testing : sig
   val context_of : t -> Context.t
+  val manual_tick : t -> unit Deferred.t
+  val manual_start : t -> unit Deferred.t
 end

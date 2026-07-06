@@ -21,8 +21,6 @@ module Request : sig
     }
   [@@deriving sexp, bin_io]
 
-  val client_order_id : t -> Client_order_id.t
-  val participant : t -> Participant.t
   val to_string : t -> string
 end
 
@@ -41,6 +39,7 @@ val create : Request.t -> order_id:Order_id.t -> t
 
 (** {2 Accessors} *)
 
+val client_order_id : t -> Client_order_id.t
 val order_id : t -> Order_id.t
 val symbol : t -> Symbol.t
 val participant : t -> Participant.t
@@ -48,12 +47,11 @@ val side : t -> Side.t
 val price : t -> Price.t
 val size : t -> Size.t
 val remaining_size : t -> Size.t
-val client_order_id : t -> Client_order_id.t
+val time_in_force : t -> Time_in_force.t
 
 (** {2 Mutation}
 
     The matching engine updates remaining size as fills occur. *)
-val time_in_force : t -> Time_in_force.t
 
 (** Reduce the remaining size by [by]. Raises if [by] is larger than
     [remaining_size] or non-positive. *)

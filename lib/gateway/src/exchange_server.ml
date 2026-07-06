@@ -3,26 +3,38 @@ open! Async
 open Jsip_types
 open Jsip_order_book
 
-type engine_request =
-  | Submit of Order.Request.t
-  | Cancel of
-      { participant : Participant.t
-      ; client_order_id : Client_order_id.t
-      }
+module Connection_state = struct
+  type t = { mutable session : Session.t option }
+
+  let participant t = Option.map t.session ~f:Session.participant
+end
+
+module Matching_engine_action = struct
+  type t =
+    | New_order of
+        { participant : Participant.t
+        ; request : Order.Request.t
+        }
+    | Cancel_order of
+        { participant : Participant.t
+        ; client_order_id : Client_order_id.t
+        }
+end
 
 type t =
   { engine : Matching_engine.t
   ; dispatcher : Dispatcher.t
-  ; request_writer : engine_request Pipe.Writer.t
+  ; request_writer : Matching_engine_action.t Pipe.Writer.t
   ; tcp_server : (Socket.Address.Inet.t, int) Tcp.Server.t
   ; port : int
+  ; logged_in_participants : Participant.Hash_set.t
   }
 
-module Connection_state = struct
-  type t = { mutable session : Session.t option }
-
-  let _participant t = Option.map t.session ~f:Session.participant
-end
+let require_login (conn_state : Connection_state.t) =
+  match conn_state.session with
+  | Some session -> Ok session
+  | None -> Or_error.error_string "not logged in"
+;;
 
 (* Bound how many client requests can sit in the queue waiting for the
    matching engine. Once the queue is full, [Pipe.write] returns a pending
@@ -32,53 +44,44 @@ end
 let request_queue_size_budget = 1024
 
 let handle_submit
-  ~request_writer
-  (request : Order.Request.t)
-  (state : Connection_state.t)
+  ~(request_writer : Matching_engine_action.t Pipe.Writer.t)
+  ~participant
+  request
   =
-  match state.session with
-  | None -> return (Or_error.error_string "Not logged in")
-  | Some session ->
-    let new_request =
-      { request with participant = Session.participant session }
-    in
-    let%map () = Pipe.write_if_open request_writer (Submit new_request) in
-    Ok ()
+  let%map () =
+    Pipe.write_if_open request_writer (New_order { participant; request })
+  in
+  Ok ()
 ;;
 
-let handle_login dispatcher (state : Connection_state.t) name =
-  if String.is_empty (String.strip name)
-  then
-    return (Or_error.error_string "Name cannot be empty or whitespace only")
-    (* else if Option.is_some connection.Connection_state.session then return
-       (Or_error.error_string "Connection already logged in") *)
-  else (
-    let participant = Participant.of_string name in
-    let session = Session.create participant in
-    match Dispatcher.register_session dispatcher participant session with
-    | Error err -> return (Error err)
-    | Ok _ ->
-      state.session <- Some session;
-      return (Ok participant))
+let handle_cancel
+  ~(request_writer : Matching_engine_action.t Pipe.Writer.t)
+  ~participant
+  client_order_id
+  =
+  let%map () =
+    Pipe.write_if_open
+      request_writer
+      (Cancel_order { participant; client_order_id })
+  in
+  Ok ()
 ;;
 
-let handle_session_feed (state : Connection_state.t) =
-  match state.session with
-  | None -> Or_error.error_string "Not logged in"
-  | Some session -> Ok (Session.reader session)
-;;
-
-let start_matching_loop ~engine ~dispatcher request_reader =
+let start_matching_loop
+  ~engine
+  ~dispatcher
+  (request_reader : Matching_engine_action.t Pipe.Reader.t)
+  =
   don't_wait_for
-    (Pipe.iter_without_pushback request_reader ~f:(fun request ->
-       let events =
-         match request with
-         | Submit order_request ->
-           Matching_engine.submit engine order_request
-         | Cancel { participant; client_order_id } ->
-           Matching_engine.cancel engine ~participant ~client_order_id
-       in
-       Dispatcher.dispatch dispatcher events))
+    (Pipe.iter_without_pushback request_reader ~f:(function
+      | Cancel_order { participant; client_order_id } ->
+        let events =
+          Matching_engine.cancel engine ~participant ~client_order_id
+        in
+        Dispatcher.dispatch dispatcher events
+      | New_order { participant; request } ->
+        let events = Matching_engine.submit engine ~participant request in
+        Dispatcher.dispatch dispatcher events))
 ;;
 
 let start ~symbols ~port () =
@@ -87,46 +90,80 @@ let start ~symbols ~port () =
   let request_reader, request_writer = Pipe.create () in
   Pipe.set_size_budget request_writer request_queue_size_budget;
   start_matching_loop ~engine ~dispatcher request_reader;
+  let logged_in_participants = Participant.Hash_set.create () in
   let implementations =
     Rpc.Implementations.create_exn
       ~implementations:
-        [ Rpc.Rpc.implement
+        [ Rpc.Rpc.implement Rpc_protocol.login_rpc (fun conn_state name ->
+            if String.is_empty (String.strip name)
+            then
+              Deferred.Or_error.error_string "login name must not be empty"
+            else (
+              let participant = Participant.of_string name in
+              match Connection_state.participant conn_state with
+              | Some existing ->
+                Deferred.Or_error.error_s
+                  [%message "already logged in" (existing : Participant.t)]
+              | None ->
+                if Hash_set.mem logged_in_participants participant
+                then
+                  Deferred.Or_error.error_s
+                    [%message
+                      "participant name already taken"
+                        (participant : Participant.t)]
+                else (
+                  let session =
+                    Dispatcher.set_up_session dispatcher participant
+                  in
+                  conn_state.session <- Some session;
+                  Hash_set.add logged_in_participants participant;
+                  Deferred.Or_error.return participant)))
+        ; Rpc.Rpc.implement
             Rpc_protocol.submit_order_rpc
-            (fun state request ->
-               handle_submit ~request_writer request state)
-        ; Rpc.Rpc.implement' Rpc_protocol.book_query_rpc (fun state symbol ->
-            ignore state;
-            Matching_engine.book engine symbol
-            |> Option.map ~f:Order_book.snapshot)
+            (fun conn_state request ->
+               match require_login conn_state with
+               | Error _ as err -> return err
+               | Ok session ->
+                 handle_submit
+                   ~request_writer
+                   ~participant:(Session.participant session)
+                   request)
+        ; Rpc.Rpc.implement
+            Rpc_protocol.cancel_order_rpc
+            (fun conn_state client_order_id ->
+               match require_login conn_state with
+               | Error _ as err -> return err
+               | Ok session ->
+                 handle_cancel
+                   ~request_writer
+                   ~participant:(Session.participant session)
+                   client_order_id)
+        ; Rpc.Rpc.implement'
+            Rpc_protocol.book_query_rpc
+            (fun _conn_state symbol ->
+               Matching_engine.book engine symbol
+               |> Option.map ~f:Order_book.snapshot)
         ; Rpc.Pipe_rpc.implement
             Rpc_protocol.market_data_rpc
-            (fun state symbols ->
-               ignore state;
+            (fun conn_state symbols ->
+               ignore conn_state;
                let reader =
                  Dispatcher.subscribe_market_data dispatcher symbols
                in
                return (Ok reader))
-        ; Rpc.Pipe_rpc.implement Rpc_protocol.audit_log_rpc (fun state () ->
-            ignore state;
-            let reader = Dispatcher.subscribe_audit dispatcher in
-            return (Ok reader))
-        ; Rpc.Rpc.implement Rpc_protocol.login_rpc (fun state name ->
-            handle_login dispatcher state name)
+        ; Rpc.Pipe_rpc.implement
+            Rpc_protocol.audit_log_rpc
+            (fun conn_state () ->
+               ignore conn_state;
+               let reader = Dispatcher.subscribe_audit dispatcher in
+               return (Ok reader))
         ; Rpc.Pipe_rpc.implement
             Rpc_protocol.session_feed_rpc
-            (fun state () -> return (handle_session_feed state))
-        ; Rpc.Rpc.implement
-            Rpc_protocol.cancel_order_rpc
-            (fun state client_order_id ->
-               match Connection_state._participant state with
-               | None -> return (Or_error.error_string "not logged in")
-               | Some participant ->
-                 let%bind () =
-                   Pipe.write
-                     request_writer
-                     (Cancel { participant; client_order_id })
-                 in
-                 return (Ok ()))
+            (fun conn_state () ->
+               match require_login conn_state with
+               | Error _ as err -> return err
+               | Ok session ->
+                 Deferred.Or_error.return (Session.reader session))
         ]
       ~on_unknown_rpc:`Close_connection
       ~on_exception:Log_on_background_exn
@@ -134,13 +171,29 @@ let start ~symbols ~port () =
   let%map tcp_server =
     Rpc.Connection.serve
       ~implementations
-      ~initial_connection_state:(fun _addr _conn ->
-        { Connection_state.session = None })
+      ~initial_connection_state:(fun _addr conn ->
+        let (state : Connection_state.t) = { session = None } in
+        don't_wait_for
+          (let%map () = Rpc.Connection.close_finished conn in
+           match state.session with
+           | None -> ()
+           | Some session ->
+             Dispatcher.clean_up_session dispatcher session;
+             Hash_set.remove
+               logged_in_participants
+               (Session.participant session));
+        state)
       ~where_to_listen:(Tcp.Where_to_listen.of_port port)
       ()
   in
   let actual_port = Tcp.Server.listening_on tcp_server in
-  { engine; dispatcher; request_writer; tcp_server; port = actual_port }
+  { engine
+  ; dispatcher
+  ; request_writer
+  ; tcp_server
+  ; port = actual_port
+  ; logged_in_participants
+  }
 ;;
 
 let port t = t.port

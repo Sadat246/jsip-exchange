@@ -18,20 +18,24 @@ val with_server
     the just-submitted request. *)
 type client
 
-(** Connect a client to [port]. The [participant] argument is accepted for
-    forward-compatibility with the planned login RPC but is currently ignored
-    — the server does not yet associate connections with participants. *)
-val connect_as : port:int -> Participant.t -> client Deferred.t
+(** Connect an RPC client to the given port on localhost. The connection is
+    not logged in yet. *)
+val connect : port:int -> client Deferred.t
+
+(** Connect and immediately login as the given participant. *)
+val connect_as : port:int -> participant:Participant.t -> client Deferred.t
 
 (** The raw RPC connection, useful for tests that exercise unusual RPC paths
     (audit log subscriptions, second clients on the same connection, etc.). *)
 val connection : client -> Rpc.Connection.t
 
-(** Submit an order via RPC. The RPC is one-way: this returns once the server
-    has enqueued the request. Participant-targeted events (acceptance, fills,
-    rejection) are currently printed on the server's stdout via the
-    dispatcher's session stub. *)
+(** Submit an order via RPC. The server attaches the participant identity
+    from the logged-in connection. *)
 val rpc_submit : client -> Order.Request.t -> unit Deferred.t
+
+(** Cancel an order via RPC, identified by its [Client_order_id.t]. The
+    server attaches the participant identity from the logged-in connection. *)
+val rpc_cancel : client -> Client_order_id.t -> unit Deferred.t
 
 (** Query the book via RPC. *)
 val rpc_book : client -> Symbol.t -> Book.t option Deferred.t

@@ -9,17 +9,16 @@ let make_order
   ~order_id
   ?(size = 100)
   ?(participant = Harness.alice)
-  ?(cid = 0)
   ()
   =
   Order.create
-    ({ symbol = Harness.aapl
+    ({ client_order_id = Client_order_id.of_int order_id
+     ; symbol = Harness.aapl
      ; participant
      ; side
      ; price = Price.of_int_cents price_cents
      ; size = Size.of_int size
      ; time_in_force = Day
-     ; client_order_id = Client_order_id.of_int cid
      }
      : Order.Request.t)
     ~order_id:(Order_id.For_testing.of_int order_id)
@@ -133,13 +132,82 @@ let%expect_test "find_match returns None for empty book" =
 
 let%expect_test "find_match finds a tradable resting order" =
   let book = Order_book.create Harness.aapl in
-  let resting = make_order ~side:Sell ~price_cents:15000 ~order_id:1 () in
+  let resting =
+    make_order
+      ~side:Sell
+      ~price_cents:15000
+      ~order_id:1
+      ~participant:Harness.bob
+      ()
+  in
   Order_book.add book resting;
   let incoming = make_order ~side:Buy ~price_cents:15000 ~order_id:2 () in
   let matched = Order_book.find_match book incoming in
   [%test_result: Order_id.t]
     (Order.order_id (Option.value_exn matched))
     ~expect:(Order.order_id resting)
+;;
+
+(* Self-trade prevention: an order never matches against its own owner. The
+   only tradable resting order here belongs to the incoming participant, so
+   [find_match] skips it and returns [None] even though the prices cross. *)
+let%expect_test "find_match skips the incoming participant's own orders" =
+  let book = Order_book.create Harness.aapl in
+  Order_book.add
+    book
+    (make_order
+       ~side:Sell
+       ~price_cents:15000
+       ~order_id:1
+       ~participant:Harness.alice
+       ());
+  let incoming =
+    make_order
+      ~side:Buy
+      ~price_cents:15000
+      ~order_id:2
+      ~participant:Harness.alice
+      ()
+  in
+  [%test_result: _ option] (Order_book.find_match book incoming) ~expect:None
+;;
+
+(* With price-time priority the aggressor would hit its own order first, but
+   self-trade prevention skips it and matches the next participant's resting
+   order deeper in the book. *)
+let%expect_test "find_match matches deeper past the incoming participant's \
+                 own order"
+  =
+  let book = Order_book.create Harness.aapl in
+  Order_book.add
+    book
+    (make_order
+       ~side:Sell
+       ~price_cents:15000
+       ~order_id:1
+       ~participant:Harness.alice
+       ());
+  let bob_ask =
+    make_order
+      ~side:Sell
+      ~price_cents:15050
+      ~order_id:2
+      ~participant:Harness.bob
+      ()
+  in
+  Order_book.add book bob_ask;
+  let incoming =
+    make_order
+      ~side:Buy
+      ~price_cents:15100
+      ~order_id:3
+      ~participant:Harness.alice
+      ()
+  in
+  let matched = Order_book.find_match book incoming in
+  [%test_result: Order_id.t]
+    (Order.order_id (Option.value_exn matched))
+    ~expect:(Order.order_id bob_ask)
 ;;
 
 let%expect_test "find_match returns None when prices don't cross" =
@@ -156,7 +224,14 @@ let%expect_test "find_match: buy matches against asks, not bids" =
   Order_book.add
     book
     (make_order ~side:Buy ~price_cents:15000 ~order_id:1 ());
-  let ask = make_order ~side:Sell ~price_cents:15000 ~order_id:2 () in
+  let ask =
+    make_order
+      ~side:Sell
+      ~price_cents:15000
+      ~order_id:2
+      ~participant:Harness.bob
+      ()
+  in
   Order_book.add book ask;
   let incoming = make_order ~side:Buy ~price_cents:15000 ~order_id:3 () in
   let matched = Order_book.find_match book incoming in

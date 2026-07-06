@@ -1,6 +1,6 @@
 (library
  (name jsip_market_maker)
  (public_name jsip-exchange.jsip_market_maker)
- (libraries jsip_types jsip_gateway core async)
+ (libraries jsip_types jsip_gateway jsip_bot_runtime core async)
  (preprocess
   (pps ppx_jane)))

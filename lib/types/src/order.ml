@@ -12,9 +12,6 @@ module Request = struct
     }
   [@@deriving sexp, bin_io]
 
-  let client_order_id t = t.client_order_id
-  let participant t = t.participant
-
   let to_string
     { symbol
     ; participant
@@ -84,6 +81,7 @@ let create (req : Request.t) ~order_id =
   }
 ;;
 
+let client_order_id t = t.client_order_id
 let order_id t = t.order_id
 let symbol t = t.symbol
 let participant t = t.participant
@@ -92,7 +90,6 @@ let price t = t.price
 let size t = t.size
 let remaining_size t = t.remaining_size
 let time_in_force t = t.time_in_force
-let client_order_id t = t.client_order_id
 
 let fill t ~by =
   if Size.( <= ) by Size.zero

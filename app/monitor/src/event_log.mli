@@ -37,7 +37,6 @@ module Color : sig
     | Blue
     | Magenta
     | Cyan
-    | Orange
   [@@deriving sexp_of, compare, equal, enumerate]
 
   val to_string : t -> string

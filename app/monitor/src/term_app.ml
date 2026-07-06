@@ -24,7 +24,6 @@ let color_to_attr (color : Event_log.Color.t) : Attr.t =
     | Blue -> Attr.Color.Expert.lightblue
     | Magenta -> Attr.Color.Expert.lightmagenta
     | Cyan -> Attr.Color.Expert.lightcyan
-    | Orange -> Attr.Color.Expert.red
   in
   Attr.fg c
 ;;

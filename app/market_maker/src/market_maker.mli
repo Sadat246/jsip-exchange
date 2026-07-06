@@ -37,5 +37,3 @@ end
     matching-engine response (acceptance, fills, rejection) arrives on the
     participant's session feed. *)
 val seed_book : Config.t -> Rpc.Connection.t -> unit Deferred.t
-
-val run : Config.t -> Rpc.Connection.t -> unit Deferred.t

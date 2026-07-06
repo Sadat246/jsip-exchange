@@ -1,146 +1,138 @@
 open! Core
 open Jsip_types
+open Async_log_kernel.Ppx_log_syntax
 
 module Key = struct
   module T = struct
-    type t = Price.t * Order_id.t [@@deriving compare, sexp]
+    type t = Price.t * Order_id.t [@@deriving compare, sexp_of]
   end
 
   include T
-  include Comparator.Make (T)
-  include Comparable.Make (T)
+  include Comparable.Make_plain (T)
 end
 
 type t =
   { symbol : Symbol.t
   ; mutable bids : Order.t Key.Map.t
   ; mutable asks : Order.t Key.Map.t
-  ; mutable orders_by_id : Order.t Order_id.Map.t
+  ; reverse_index : (Side.t * Key.t) Order_id.Table.t
   }
 [@@deriving sexp_of]
 
 let create symbol =
   { symbol
-  ; bids = Map.empty (module Key)
-  ; asks = Map.empty (module Key)
-  ; orders_by_id = Map.empty (module Order_id)
+  ; bids = Key.Map.empty
+  ; asks = Key.Map.empty
+  ; reverse_index = Order_id.Table.create ()
   }
 ;;
 
 let symbol t = t.symbol
 
-let side_map t side =
+let side_data t side =
   match (side : Side.t) with Buy -> t.bids | Sell -> t.asks
 ;;
 
-let set_side_map t side orders =
+let set_side t side orders =
   match (side : Side.t) with
   | Buy -> t.bids <- orders
   | Sell -> t.asks <- orders
 ;;
 
-let find_key order = Order.price order, Order.order_id order
-
 let add t order =
-  let key = find_key order in
   let side = Order.side order in
-  set_side_map t side (Map.set (side_map t side) ~key ~data:order);
-  t.orders_by_id
-  <- Map.set t.orders_by_id ~key:(Order.order_id order) ~data:order
+  let order_id = Order.order_id order in
+  let key = Order.price order, order_id in
+  let existing_orders = side_data t side in
+  match Map.add existing_orders ~key ~data:order with
+  | `Duplicate -> [%log.info "BUG: duplicate (price * order_id) key"]
+  | `Ok new_data ->
+    set_side t side new_data;
+    Hashtbl.set t.reverse_index ~key:order_id ~data:(side, key)
 ;;
 
 let remove' t order_id =
-  match Map.find t.orders_by_id order_id with
+  match Hashtbl.find_and_remove t.reverse_index order_id with
   | None -> None
-  | Some order_to_remove ->
-    t.orders_by_id <- Map.remove t.orders_by_id order_id;
-    let side = Order.side order_to_remove in
-    let key_to_remove = find_key order_to_remove in
-    set_side_map t side (Map.remove (side_map t side) key_to_remove);
-    Some order_to_remove
+  | Some (side, key) ->
+    let side_data = side_data t side in
+    let%bind.Option order = Map.find side_data key in
+    let updated_side = Map.remove side_data key in
+    set_side t side updated_side;
+    Some order
 ;;
 
-let remove t order_id =
-  let order_to_remove = Map.find_exn t.orders_by_id order_id in
-  t.orders_by_id <- Map.remove t.orders_by_id order_id;
-  let side = Order.side order_to_remove in
-  let key_to_remove = find_key order_to_remove in
-  match side with
-  | Side.Buy -> set_side_map t Side.Buy (Map.remove t.bids key_to_remove)
-  | Side.Sell -> set_side_map t Side.Sell (Map.remove t.asks key_to_remove)
+let remove t order_id = ignore (remove' t order_id)
+
+let find t order_id =
+  let%bind.Option side, key = Hashtbl.find t.reverse_index order_id in
+  let data = side_data t side in
+  Map.find data key
 ;;
 
-let find t order_id = Map.find t.orders_by_id order_id
+(* Find the resting order [incoming] should match against, if any. The
+   opposite side is keyed by [(price, order_id)], so walking it in priority
+   order -- ascending for asks, descending for bids -- visits the most
+   aggressive resting orders first.
 
-let best_order t side : Order.t option =
-  match side with
-  | Side.Buy ->
-    (match Map.max_elt t.bids with
-     | Some (_, order) -> Some order
-     | None -> None)
-  | Side.Sell ->
-    (match Map.min_elt t.asks with
-     | Some (_, order) -> Some order
-     | None -> None)
-;;
-
-(* let better_order side order1 order2 = let price1 = Order.price order1 in
-   let price2 = Order.price order2 in let more_aggressive_order = if
-   Price.is_more_aggressive side ~price:price1 ~than:price2 then Some order1
-   else if Price.is_more_aggressive side ~price:price2 ~than:price1 then Some
-   order2 else None in match more_aggressive_order with | Some x -> x | None
-   -> let time1 = Order.order_id order1 in let time2 = Order.order_id order2
-   in if Order_id.compare time1 time2 < 0 then order1 else order2 ;;
-
-   let compare_order side order1 order2 : int = let price1 = Order.price
-   order1 in let price2 = Order.price order2 in let more_aggressive_order =
-   if Price.is_more_aggressive side ~price:price1 ~than:price2 then -1 else
-   if Price.is_more_aggressive side ~price:price2 ~than:price1 then 1 else 0
-   in match more_aggressive_order with | 0 -> let time1 = Order.order_id
-   order1 in let time2 = Order.order_id order2 in if Order_id.compare time1
-   time2 < 0 then -1 else 1 | x -> x ;;
-
-   let best_order t side = List.reduce (side_list t side) ~f:(fun x y ->
-   better_order side x y) ;; *)
-
-(* NOTE: This walks the list front-to-back and returns the *first* tradable
-   order, not the best-priced one. Orders are in reverse insertion order
-   (newest first), so this matches against whatever was most recently added,
-   regardless of price. See test_matching_engine.ml for a test that
-   demonstrates why this is wrong. *)
-
+   Self-trade prevention: an order never matches against its own owner. We
+   skip the incoming participant's own resting orders and match against the
+   first order from another participant. The skipped orders stay on the book;
+   the aggressor simply trades deeper. Because deeper orders are at
+   equal-or-worse prices, once the best *other* order is not marketable,
+   nothing behind it can be either -- so a single price check on that first
+   eligible order decides the whole thing. *)
 let find_match t incoming =
   let incoming_side = Order.side incoming in
+  let incoming_participant = Order.participant incoming in
   let opposite_side = Side.flip incoming_side in
-  let incomingPrice = Order.price incoming in
-  match best_order t opposite_side with
-  | None -> None
-  | Some order ->
-    if Price.is_marketable
-         incoming_side
-         ~price:incomingPrice
-         ~resting_price:(Order.price order)
-    then Some order
-    else None
+  let resting_orders = side_data t opposite_side in
+  let in_priority_order =
+    let order =
+      match opposite_side with
+      | Buy -> `Decreasing_key
+      | Sell -> `Increasing_key
+    in
+    Map.to_sequence resting_orders ~order
+  in
+  let%bind.Option (best_price, _order_id), best_resting_order =
+    Sequence.find in_priority_order ~f:(fun (_key, resting) ->
+      not
+        (Participant.equal (Order.participant resting) incoming_participant))
+  in
+  Option.some_if
+    (Price.is_marketable
+       incoming_side
+       ~price:(Order.price incoming)
+       ~resting_price:best_price)
+    best_resting_order
 ;;
 
-let orders_on_side t side = Map.data (side_map t side)
+let orders_on_side t side = side_data t side |> Map.data
 let is_empty t = Map.is_empty t.bids && Map.is_empty t.asks
-let count t side = Map.length (side_map t side)
+let count t side = Map.length (side_data t side)
+
+let best_price t side =
+  let resting_orders = side_data t side in
+  (match side with
+   | Buy -> Map.max_elt resting_orders
+   | Sell -> Map.min_elt resting_orders)
+  |> Option.map ~f:(fun ((price, _order_id), _order) -> price)
+;;
 
 let best_level t side : Level.t option =
-  match best_order t side with
+  let resting_orders = side_data t side in
+  match best_price t side with
   | None -> None
-  | Some order ->
-    let price = Order.price order in
+  | Some price ->
     let total_size =
-      Map.fold
-        (side_map t side)
-        ~init:Size.zero
-        ~f:(fun ~key:_ ~data:order acc ->
-          if Price.equal (Order.price order) price
-          then Size.( + ) acc (Order.remaining_size order)
-          else acc)
+      Map.sumi
+        (module Size)
+        resting_orders
+        ~f:(fun ~key:(price', _) ~data:order ->
+          if Price.equal price price'
+          then Order.remaining_size order
+          else Size.zero)
     in
     Some { price; size = total_size }
 ;;
@@ -149,36 +141,13 @@ let best_bid_offer t : Bbo.t =
   { bid = best_level t Buy; ask = best_level t Sell }
 ;;
 
-(*=let snapshot_side t (side : Side.t) =
+let snapshot_side t (side : Side.t) =
   let compare =
     match side with
     | Buy -> Comparable.reverse Level.compare
     | Sell -> Level.compare
   in
   orders_on_side t side |> List.map ~f:Level.of_order |> List.sort ~compare
-;;*)
-
-let compare_order side order1 order2 : int =
-  let price1 = Order.price order1 in
-  let price2 = Order.price order2 in
-  let more_aggressive_order =
-    if Price.is_more_aggressive side ~price:price1 ~than:price2
-    then -1
-    else if Price.is_more_aggressive side ~price:price2 ~than:price1
-    then 1
-    else 0
-  in
-  match more_aggressive_order with
-  | 0 ->
-    let time1 = Order.order_id order1 in
-    let time2 = Order.order_id order2 in
-    if Order_id.compare time1 time2 < 0 then -1 else 1
-  | x -> x
-;;
-
-let snapshot_side t (side : Side.t) =
-  let compare = compare_order side in
-  orders_on_side t side |> List.sort ~compare |> List.map ~f:Level.of_order
 ;;
 
 let snapshot t =

@@ -6,16 +6,17 @@ module Fundamental_oracle = Jsip_fundamental.Fundamental_oracle
 let name = "book-filler"
 
 let description =
-  "One Book_filler bot floods a single book with resting Day orders it never \
-   intends to trade, growing order-book memory and snapshot/match latency."
+  "One Book_filler bot floods a single book with resting Day orders it \
+   never intends to trade, growing order-book memory and snapshot/match \
+   latency."
 ;;
 
 let symbol = Symbol.of_string "AAPL"
 
-(* A deliberately aggressive configuration: every 100ms the bot adds 50 resting
-   orders, each on a fresh price level ([level_spacing_cents = 1]), sitting at
-   least $5 off the fundamental so nothing ever fills. Dial [orders_per_tick]
-   or the [tick_interval] down for a gentler run. *)
+(* A deliberately aggressive configuration: every 100ms the bot adds 50
+   resting orders, each on a fresh price level ([level_spacing_cents = 1]),
+   sitting at least $5 off the fundamental so nothing ever fills. Dial
+   [orders_per_tick] or the [tick_interval] down for a gentler run. *)
 let configure () : Scenario_config.t =
   let oracle_config =
     Symbol.Map.of_alist_exn
@@ -27,7 +28,7 @@ let configure () : Scenario_config.t =
           } )
       ]
   in
-  let book_filler_config : Jsip_bots.Book_filler.Config.t =
+  let book_filler_config : Jsip_bots.Book_filler_sadat.Config.t =
     { symbols = [ symbol ]
     ; orders_per_tick = 50
     ; order_size = 1
@@ -42,7 +43,7 @@ let configure () : Scenario_config.t =
   ; news = []
   ; bots =
       [ Bot_spec.T
-          { bot = (module Jsip_bots.Book_filler)
+          { bot = (module Jsip_bots.Book_filler_sadat)
           ; config = book_filler_config
           ; participant = Participant.of_string "BookFiller"
           ; symbols = [ symbol ]

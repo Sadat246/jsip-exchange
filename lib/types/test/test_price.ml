@@ -75,51 +75,56 @@ let%expect_test "negative to_string_dollar" =
   [%expect {| -$1.50 |}]
 ;;
 
-let%expect_test "checks if price is more competitive" =
-  let price_100 = Price.of_int_cents 10000 in
-  let price_101 = Price.of_int_cents 10100 in
-  let price_99 = Price.of_int_cents 9900 in
+let%test_unit "is_more_aggressive: basic cases" =
+  let a = Price.of_int_cents 2 in
+  let b = Price.of_int_cents 1 in
   [%test_result: bool]
-    (Price.is_more_aggressive Side.Buy ~price:price_100 ~than:price_101)
-    ~expect:false;
-  [%test_result: bool]
-    (Price.is_more_aggressive Side.Buy ~price:price_100 ~than:price_99)
+    (Price.is_more_aggressive Buy ~price:a ~than:b)
     ~expect:true;
   [%test_result: bool]
-    (Price.is_more_aggressive Side.Sell ~price:price_100 ~than:price_99)
+    (Price.is_more_aggressive Buy ~price:b ~than:a)
     ~expect:false;
   [%test_result: bool]
-    (Price.is_more_aggressive Side.Sell ~price:price_100 ~than:price_100)
-    ~expect:false;
+    (Price.is_more_aggressive Sell ~price:b ~than:a)
+    ~expect:true;
   [%test_result: bool]
-    (Price.is_more_aggressive Side.Buy ~price:price_100 ~than:price_100)
+    (Price.is_more_aggressive Sell ~price:a ~than:b)
     ~expect:false
 ;;
 
-let%expect_test "checks if price is marketable" =
-  let price_100 = Price.of_int_cents 10000 in
-  let price_101 = Price.of_int_cents 10100 in
+let%test_unit "is_more_aggressive: equal prices" =
+  let p = Price.of_int_cents 100 in
   [%test_result: bool]
-    (Price.is_marketable Side.Buy ~price:price_101 ~resting_price:price_100)
-    ~expect:true;
-  [%test_result: bool]
-    (Price.is_marketable Side.Buy ~price:price_100 ~resting_price:price_100)
-    ~expect:true;
-  [%test_result: bool]
-    (Price.is_marketable Side.Buy ~price:price_100 ~resting_price:price_101)
+    (Price.is_more_aggressive Buy ~price:p ~than:p)
     ~expect:false;
   [%test_result: bool]
-    (Price.is_marketable Side.Sell ~price:price_101 ~resting_price:price_100)
+    (Price.is_more_aggressive Sell ~price:p ~than:p)
+    ~expect:false
+;;
+
+let%test_unit "is_marketable: basic cases" =
+  let a = Price.of_int_cents 2 in
+  let b = Price.of_int_cents 1 in
+  [%test_result: bool]
+    (Price.is_marketable Buy ~price:a ~resting_price:b)
+    ~expect:true;
+  [%test_result: bool]
+    (Price.is_marketable Buy ~price:b ~resting_price:a)
     ~expect:false;
   [%test_result: bool]
-    (Price.is_marketable Side.Sell ~price:price_100 ~resting_price:price_100)
+    (Price.is_marketable Sell ~price:b ~resting_price:a)
     ~expect:true;
   [%test_result: bool]
-    (Price.is_marketable Side.Sell ~price:price_100 ~resting_price:price_101)
+    (Price.is_marketable Sell ~price:a ~resting_price:b)
+    ~expect:false
+;;
+
+let%test_unit "is_marketable: equal prices" =
+  let p = Price.of_int_cents 100 in
+  [%test_result: bool]
+    (Price.is_marketable Buy ~price:p ~resting_price:p)
     ~expect:true;
-  let x =
-    Price.is_marketable Side.Sell ~price:price_100 ~resting_price:price_101
-  in
-  print_s [%sexp (x : bool)];
-  [%expect {| true |}]
+  [%test_result: bool]
+    (Price.is_marketable Sell ~price:p ~resting_price:p)
+    ~expect:true
 ;;
