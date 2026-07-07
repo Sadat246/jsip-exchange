@@ -63,4 +63,10 @@ val market_data_rpc
     credentials; this simulator does not, but the same intent applies. *)
 val audit_log_rpc : (unit, Exchange_event.t, Error.t) Rpc.Pipe_rpc.t
 
+(** Subscribe to the exchange's per-second health snapshots (process memory +
+    submit/cancel latency percentiles). Operator/monitoring feed, like
+    {!audit_log_rpc}; the payload is {!Exchange_stats.t}. *)
+val exchange_stats_rpc
+  : (unit, Exchange_stats.t, Error.t) Rpc.Pipe_rpc.t
+
 val session_feed_rpc : (unit, Exchange_event.t, Error.t) Rpc.Pipe_rpc.t

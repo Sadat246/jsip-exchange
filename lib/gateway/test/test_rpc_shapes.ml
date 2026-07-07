@@ -117,3 +117,18 @@ let%expect_test "audit-log RPC" =
     |}];
   return ()
 ;;
+
+let%expect_test "exchange-stats RPC" =
+  print_s
+    [%sexp
+      (Rpc.Pipe_rpc.shapes Rpc_protocol.exchange_stats_rpc
+       : Async_rpc_kernel.Rpc_shapes.t)];
+  [%expect
+    {|
+    (Streaming_rpc (query 86ba5df747eec837f0b391dd49f33f9e)
+     (initial_response 86ba5df747eec837f0b391dd49f33f9e)
+     (update_response 8d4bf15d47f4bf6575fa94d90ebb5dd5)
+     (error 52966f4a49a77bfdff668e9cc61511b3))
+    |}];
+  return ()
+;;

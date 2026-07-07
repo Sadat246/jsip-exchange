@@ -41,6 +41,14 @@ val subscribe_market_data
     / admin tools. *)
 val subscribe_audit : t -> Exchange_event.t Pipe.Reader.t
 
+(** Subscribe to the per-second exchange-stats feed. The pipe is removed when
+    its reader is closed. *)
+val subscribe_stats : t -> Exchange_stats.t Pipe.Reader.t
+
+(** Broadcast one stats snapshot to every stats subscriber. Called by the
+    server's 1 Hz timer, not from [dispatch] — stats are not events. *)
+val push_stats : t -> Exchange_stats.t -> unit
+
 (** Route each event to every interested subscriber:
 
     - Every event is pushed to every audit subscriber.

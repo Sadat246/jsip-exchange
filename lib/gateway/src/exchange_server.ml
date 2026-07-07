@@ -9,15 +9,20 @@ module Connection_state = struct
   let participant t = Option.map t.session ~f:Session.participant
 end
 
+(* [received_at] is stamped in the RPC handler, before the request enters the
+   queue, so latency measured against it includes queue wait. In-process only:
+   no derivers, so no wire impact. *)
 module Matching_engine_action = struct
   type t =
     | New_order of
         { participant : Participant.t
         ; request : Order.Request.t
+        ; received_at : Time_ns.t
         }
     | Cancel_order of
         { participant : Participant.t
         ; client_order_id : Client_order_id.t
+        ; received_at : Time_ns.t
         }
 end
 
@@ -28,6 +33,8 @@ type t =
   ; tcp_server : (Socket.Address.Inet.t, int) Tcp.Server.t
   ; port : int
   ; logged_in_participants : Participant.Hash_set.t
+  ; collector : Stats_collector.t
+  ; stopped : unit Ivar.t (* filled on [close] to stop the stats timer *)
   }
 
 let require_login (conn_state : Connection_state.t) =
@@ -49,7 +56,9 @@ let handle_submit
   request
   =
   let%map () =
-    Pipe.write_if_open request_writer (New_order { participant; request })
+    Pipe.write_if_open
+      request_writer
+      (New_order { participant; request; received_at = Time_ns.now () })
   in
   Ok ()
 ;;
@@ -62,7 +71,8 @@ let handle_cancel
   let%map () =
     Pipe.write_if_open
       request_writer
-      (Cancel_order { participant; client_order_id })
+      (Cancel_order
+         { participant; client_order_id; received_at = Time_ns.now () })
   in
   Ok ()
 ;;
@@ -70,26 +80,47 @@ let handle_cancel
 let start_matching_loop
   ~engine
   ~dispatcher
+  ~collector
   (request_reader : Matching_engine_action.t Pipe.Reader.t)
   =
+  let elapsed_since received_at = Time_ns.diff (Time_ns.now ()) received_at in
   don't_wait_for
     (Pipe.iter_without_pushback request_reader ~f:(function
-      | Cancel_order { participant; client_order_id } ->
+      | Cancel_order { participant; client_order_id; received_at } ->
         let events =
           Matching_engine.cancel engine ~participant ~client_order_id
         in
+        Stats_collector.record_cancel collector (elapsed_since received_at);
         Dispatcher.dispatch dispatcher events
-      | New_order { participant; request } ->
+      | New_order { participant; request; received_at } ->
         let events = Matching_engine.submit engine ~participant request in
+        Stats_collector.record_submit collector (elapsed_since received_at);
         Dispatcher.dispatch dispatcher events))
 ;;
 
 let start ~symbols ~port () =
   let engine = Matching_engine.create symbols in
   let dispatcher = Dispatcher.create () in
+  let collector = Stats_collector.create () in
+  let stopped = Ivar.create () in
   let request_reader, request_writer = Pipe.create () in
   Pipe.set_size_budget request_writer request_queue_size_budget;
-  start_matching_loop ~engine ~dispatcher request_reader;
+  start_matching_loop ~engine ~dispatcher ~collector request_reader;
+  Clock_ns.every ~stop:(Ivar.read stopped) (Time_ns.Span.of_sec 1.) (fun () ->
+    let submit_latency, cancel_latency = Stats_collector.take collector in
+    let gc = Gc.stat () in
+    Dispatcher.push_stats
+      dispatcher
+      { live_words = gc.live_words
+      ; heap_words = gc.heap_words
+      ; top_heap_words = gc.top_heap_words
+      ; minor_words = gc.minor_words
+      ; promoted_words = gc.promoted_words
+      ; minor_collections = gc.minor_collections
+      ; major_collections = gc.major_collections
+      ; submit_latency
+      ; cancel_latency
+      });
   let logged_in_participants = Participant.Hash_set.create () in
   let implementations =
     Rpc.Implementations.create_exn
@@ -158,6 +189,12 @@ let start ~symbols ~port () =
                let reader = Dispatcher.subscribe_audit dispatcher in
                return (Ok reader))
         ; Rpc.Pipe_rpc.implement
+            Rpc_protocol.exchange_stats_rpc
+            (fun conn_state () ->
+               ignore conn_state;
+               let reader = Dispatcher.subscribe_stats dispatcher in
+               return (Ok reader))
+        ; Rpc.Pipe_rpc.implement
             Rpc_protocol.session_feed_rpc
             (fun conn_state () ->
                match require_login conn_state with
@@ -193,12 +230,15 @@ let start ~symbols ~port () =
   ; tcp_server
   ; port = actual_port
   ; logged_in_participants
+  ; collector
+  ; stopped
   }
 ;;
 
 let port t = t.port
 
 let close t =
+  Ivar.fill_if_empty t.stopped ();
   Pipe.close t.request_writer;
   Tcp.Server.close t.tcp_server
 ;;
