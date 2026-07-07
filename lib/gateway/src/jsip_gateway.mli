@@ -5,7 +5,7 @@
     [Dispatcher] that routes matching-engine events to the right subscribers
     (per-participant session feeds, per-symbol market data, audit firehose). *)
 
-module Exchange_stats = Exchange_stats
+module Exchange_stats = Jsip_dashboard_protocol.Exchange_stats
 module Protocol = Protocol
 module Rpc_protocol = Rpc_protocol
 module Stats_collector = Stats_collector

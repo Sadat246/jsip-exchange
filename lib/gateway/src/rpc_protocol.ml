@@ -1,6 +1,7 @@
 open! Core
 open! Async
 open Jsip_types
+open Jsip_dashboard_protocol
 
 let login_rpc =
   Rpc.Rpc.create

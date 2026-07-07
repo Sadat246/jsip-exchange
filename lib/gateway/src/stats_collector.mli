@@ -8,6 +8,7 @@
     timer calls [take] to snapshot and reset. *)
 
 open! Core
+open Jsip_dashboard_protocol
 
 type t
 

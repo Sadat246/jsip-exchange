@@ -1,0 +1,6 @@
+(library
+ (name jsip_dashboard_protocol_test)
+ (libraries core async_rpc_kernel jsip_dashboard_protocol)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

@@ -10,8 +10,8 @@ module Connection_state = struct
 end
 
 (* [received_at] is stamped in the RPC handler, before the request enters the
-   queue, so latency measured against it includes queue wait. In-process only:
-   no derivers, so no wire impact. *)
+   queue, so latency measured against it includes queue wait. In-process
+   only: no derivers, so no wire impact. *)
 module Matching_engine_action = struct
   type t =
     | New_order of
@@ -83,7 +83,9 @@ let start_matching_loop
   ~collector
   (request_reader : Matching_engine_action.t Pipe.Reader.t)
   =
-  let elapsed_since received_at = Time_ns.diff (Time_ns.now ()) received_at in
+  let elapsed_since received_at =
+    Time_ns.diff (Time_ns.now ()) received_at
+  in
   don't_wait_for
     (Pipe.iter_without_pushback request_reader ~f:(function
       | Cancel_order { participant; client_order_id; received_at } ->
@@ -106,21 +108,24 @@ let start ~symbols ~port () =
   let request_reader, request_writer = Pipe.create () in
   Pipe.set_size_budget request_writer request_queue_size_budget;
   start_matching_loop ~engine ~dispatcher ~collector request_reader;
-  Clock_ns.every ~stop:(Ivar.read stopped) (Time_ns.Span.of_sec 1.) (fun () ->
-    let submit_latency, cancel_latency = Stats_collector.take collector in
-    let gc = Gc.stat () in
-    Dispatcher.push_stats
-      dispatcher
-      { live_words = gc.live_words
-      ; heap_words = gc.heap_words
-      ; top_heap_words = gc.top_heap_words
-      ; minor_words = gc.minor_words
-      ; promoted_words = gc.promoted_words
-      ; minor_collections = gc.minor_collections
-      ; major_collections = gc.major_collections
-      ; submit_latency
-      ; cancel_latency
-      });
+  Clock_ns.every
+    ~stop:(Ivar.read stopped)
+    (Time_ns.Span.of_sec 1.)
+    (fun () ->
+       let submit_latency, cancel_latency = Stats_collector.take collector in
+       let gc = Gc.stat () in
+       Dispatcher.push_stats
+         dispatcher
+         { live_words = gc.live_words
+         ; heap_words = gc.heap_words
+         ; top_heap_words = gc.top_heap_words
+         ; minor_words = gc.minor_words
+         ; promoted_words = gc.promoted_words
+         ; minor_collections = gc.minor_collections
+         ; major_collections = gc.major_collections
+         ; submit_latency
+         ; cancel_latency
+         });
   let logged_in_participants = Participant.Hash_set.create () in
   let implementations =
     Rpc.Implementations.create_exn

@@ -1,6 +1,6 @@
 (library
  (name jsip_gateway)
  (public_name jsip-exchange.jsip_gateway)
- (libraries jsip_types jsip_order_book async core)
+ (libraries jsip_types jsip_order_book jsip_dashboard_protocol async core)
  (preprocess
   (pps ppx_jane)))

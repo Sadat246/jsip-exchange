@@ -54,7 +54,8 @@ let%expect_test "take clears: second take is empty; streams are independent" =
       "second take"
         (submit2 : Exchange_stats.Latency_summary.t)
         (cancel2 : Exchange_stats.Latency_summary.t)];
-  [%expect {|
+  [%expect
+    {|
     ("first take" (submit1 ((count 1) (p50 5ms) (p90 5ms) (p99 5ms)))
      (cancel1 ((count 1) (p50 9ms) (p90 9ms) (p99 9ms))))
     ("second take" (submit2 ((count 0) (p50 0s) (p90 0s) (p99 0s)))

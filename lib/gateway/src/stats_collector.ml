@@ -1,7 +1,8 @@
 open! Core
+open Jsip_dashboard_protocol
 
-(* Samples cons on as they arrive; [summarize] sorts before ranking, so arrival
-   order is irrelevant. *)
+(* Samples cons on as they arrive; [summarize] sorts before ranking, so
+   arrival order is irrelevant. *)
 type t =
   { mutable submit_samples : Time_ns.Span.t list
   ; mutable cancel_samples : Time_ns.Span.t list

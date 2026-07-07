@@ -1,0 +1,17 @@
+; Assemble the files the dashboard server serves into one directory,
+; [app/dashboard/client/site], so [-static-dir] can point at a single place:
+;   dune build app/dashboard/client
+;   ... -static-dir _build/default/app/dashboard/client/site
+
+(subdir
+ site
+ (rule
+  (target index.html)
+  (deps ../static/index.html)
+  (action
+   (copy ../static/index.html index.html)))
+ (rule
+  (target main.bc.js)
+  (deps ../bin/main.bc.js)
+  (action
+   (copy ../bin/main.bc.js main.bc.js))))

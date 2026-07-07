@@ -1,6 +1,7 @@
 open! Core
 open! Async
 open Jsip_types
+open Jsip_dashboard_protocol
 
 type t =
   { market_data_subscribers_by_symbol :

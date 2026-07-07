@@ -1,10 +1,11 @@
 (** A per-second health snapshot of the running exchange process, streamed by
     {!Rpc_protocol.exchange_stats_rpc} to operator tooling.
 
-    Operational metrics (memory + latency), not domain vocabulary, so this
-    lives in the gateway layer, not [Jsip_types] — and rides its own RPC
-    rather than becoming an [Exchange_event.t] variant. Each snapshot is raw;
-    building a rolling ~60s view from the stream is the dashboard's job. *)
+    Operational metrics (memory + latency), not domain vocabulary. It lives
+    in its own [Core]-only library — rather than [Jsip_gateway] — so the
+    browser dashboard can link it: [Jsip_gateway] pulls in [async_unix],
+    which [js_of_ocaml] cannot compile. Each snapshot is raw; building a
+    rolling ~60s view from the stream is the dashboard's job. *)
 
 open! Core
 

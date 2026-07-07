@@ -1,0 +1,11 @@
+; The pure state machine lives in its own library, with no [bonsai_web] /
+; [virtual_dom] dependency, so its expect tests can link and run natively.
+; [virtual_dom] references js_of_ocaml-only symbols ([Ojs]) that have no native
+; implementation, so anything that links it cannot build a native test runner.
+
+(library
+ (name jsip_dashboard_controller)
+ (public_name jsip-exchange.jsip_dashboard_controller)
+ (libraries core jsip_dashboard_protocol)
+ (preprocess
+  (pps ppx_jane)))

@@ -1,0 +1,13 @@
+(library
+ (name jsip_dashboard)
+ (public_name jsip-exchange.jsip_dashboard)
+ (libraries
+  core
+  bonsai
+  bonsai.extra
+  bonsai_web
+  virtual_dom
+  jsip_dashboard_protocol
+  jsip_dashboard_controller)
+ (preprocess
+  (pps ppx_jane bonsai.ppx_bonsai ppx_html js_of_ocaml-ppx)))
