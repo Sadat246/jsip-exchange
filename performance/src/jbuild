@@ -1,0 +1,4 @@
+(library (
+  (name jsip_exchange_perf_lib)
+  (libraries (core core_bench))
+  (preprocess (pps (ppx_jane)))))

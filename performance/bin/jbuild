@@ -1,0 +1,2 @@
+(executables (
+  (names (main)) (libraries (command_unix core jsip_exchange_perf_lib))))

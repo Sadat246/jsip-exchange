@@ -1,0 +1,7 @@
+(executable
+ (name main)
+ (public_name jsip-exchange-perf)
+ (package jsip-exchange)
+ (libraries jsip_exchange_perf_lib core core_unix.command_unix)
+ (preprocess
+  (pps ppx_jane)))
