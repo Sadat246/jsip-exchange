@@ -44,10 +44,11 @@ let%expect_test "empty window" =
   [%expect
     {|
     ((memory_series ()) (memory_now ()) (memory_min ()) (memory_max ())
-     (submit_latency ((count 0) (p50 0s) (p90 0s) (p99 0s)))
-     (cancel_latency ((count 0) (p50 0s) (p90 0s) (p99 0s))) (submit_rate 0)
-     (cancel_rate 0) (minor_collections 0) (major_collections 0)
-     (sample_count 0))
+     (memory_delta ()) (submit_latency ((count 0) (p50 0s) (p90 0s) (p99 0s)))
+     (cancel_latency ((count 0) (p50 0s) (p90 0s) (p99 0s)))
+     (submit_latency_series ()) (cancel_latency_series ()) (submit_rate 0)
+     (cancel_rate 0) (submit_rate_series ()) (cancel_rate_series ())
+     (minor_collections 0) (major_collections 0) (sample_count 0))
     |}]
 ;;
 
@@ -68,10 +69,17 @@ let%expect_test "series, latest latency, and per-second rates" =
   [%expect
     {|
     ((memory_series (1000 1500)) (memory_now (1500)) (memory_min (1000))
-     (memory_max (1500))
+     (memory_max (1500)) (memory_delta (500))
      (submit_latency ((count 5) (p50 2ms) (p90 8ms) (p99 20ms)))
-     (cancel_latency ((count 2) (p50 1ms) (p90 0s) (p99 0s))) (submit_rate 5)
-     (cancel_rate 2) (minor_collections 7) (major_collections 1)
+     (cancel_latency ((count 2) (p50 1ms) (p90 0s) (p99 0s)))
+     (submit_latency_series
+      (((count 3) (p50 0s) (p90 0s) (p99 0s))
+       ((count 5) (p50 2ms) (p90 8ms) (p99 20ms))))
+     (cancel_latency_series
+      (((count 0) (p50 0s) (p90 0s) (p99 0s))
+       ((count 2) (p50 1ms) (p90 0s) (p99 0s))))
+     (submit_rate 5) (cancel_rate 2) (submit_rate_series (3 5))
+     (cancel_rate_series (0 2)) (minor_collections 7) (major_collections 1)
      (sample_count 2))
     |}]
 ;;
@@ -83,9 +91,13 @@ let%expect_test "consecutive-identical snapshots are deduped" =
   [%expect
     {|
     ((memory_series (2000)) (memory_now (2000)) (memory_min (2000))
-     (memory_max (2000)) (submit_latency ((count 0) (p50 0s) (p90 0s) (p99 0s)))
-     (cancel_latency ((count 0) (p50 0s) (p90 0s) (p99 0s))) (submit_rate 0)
-     (cancel_rate 0) (minor_collections 0) (major_collections 0)
+     (memory_max (2000)) (memory_delta (0))
+     (submit_latency ((count 0) (p50 0s) (p90 0s) (p99 0s)))
+     (cancel_latency ((count 0) (p50 0s) (p90 0s) (p99 0s)))
+     (submit_latency_series (((count 0) (p50 0s) (p90 0s) (p99 0s))))
+     (cancel_latency_series (((count 0) (p50 0s) (p90 0s) (p99 0s))))
+     (submit_rate 0) (cancel_rate 0) (submit_rate_series (0))
+     (cancel_rate_series (0)) (minor_collections 0) (major_collections 0)
      (sample_count 1))
     |}]
 ;;

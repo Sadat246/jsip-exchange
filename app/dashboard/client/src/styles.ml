@@ -77,3 +77,31 @@ let swatch color =
       "display:inline-block; width:9px; height:9px; border-radius:2px; \
        background:%{color}; margin-right:7px"]
 ;;
+
+(* Legend under a multi-line chart: a row of coloured swatches + labels. *)
+let legend_row =
+  style "display:flex; gap:14px; margin-top:6px; flex-wrap:wrap"
+;;
+
+let legend_item =
+  style
+    [%string
+      "display:flex; align-items:center; font-size:11px; color:%{text_dim}"]
+;;
+
+(* Δ readout next to the big memory number; [color] flags the direction. *)
+let delta color =
+  style
+    [%string
+      "font-size:13px; color:%{color}; margin-left:12px; \
+       font-variant-numeric:tabular-nums"]
+;;
+
+(* Full-width banner shown when the RPC connection is not healthy. *)
+let banner color =
+  style
+    [%string
+      "background:%{color}; color:%{bg}; padding:8px 14px; \
+       border-radius:6px; margin-bottom:16px; font-size:13px; \
+       font-weight:600"]
+;;

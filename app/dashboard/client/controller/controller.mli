@@ -19,11 +19,22 @@ module Display : sig
     ; memory_now : int option
     ; memory_min : int option
     ; memory_max : int option
+    ; memory_delta : int option
+    (** [live_words] now minus at the oldest retained snapshot — the
+        unambiguous flat-vs-climbing signal the auto-scaled sparkline can't
+        give. Near zero = flat; large positive = growing. *)
     ; submit_latency : Exchange_stats.Latency_summary.t
     ; cancel_latency : Exchange_stats.Latency_summary.t
+    ; submit_latency_series : Exchange_stats.Latency_summary.t list
+    (** per-snapshot submit latency over the window, oldest first, for the
+        p50/p90/p99 trend chart *)
+    ; cancel_latency_series : Exchange_stats.Latency_summary.t list
     ; submit_rate : int
     (** submitted orders in the last snapshot (≈ orders/sec) *)
     ; cancel_rate : int
+    ; submit_rate_series : int list
+    (** submit count per snapshot, oldest first *)
+    ; cancel_rate_series : int list
     ; minor_collections : int
     ; major_collections : int
     ; sample_count : int (** snapshots currently in the window *)
