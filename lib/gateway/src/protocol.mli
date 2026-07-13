@@ -13,9 +13,9 @@ open Jsip_types
     exchange-centric view suitable for operator logs and tests.
 
     [symbol_to_string] controls how a {!Jsip_types.Symbol_id} is rendered; it
-    defaults to the raw integer id (all a pure type can print). The interactive
-    client passes an id->name resolver (from the symbol directory) so events
-    show symbol names instead. *)
+    defaults to the raw integer id (all a pure type can print). The
+    interactive client passes an id->name resolver (from the symbol
+    directory) so events show symbol names instead. *)
 val format_event
   :  ?symbol_to_string:(Symbol_id.t -> string)
   -> Exchange_event.t

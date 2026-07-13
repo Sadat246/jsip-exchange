@@ -143,6 +143,34 @@ let%expect_test "aggressor sweeps multiple resting orders" =
     |}]
 ;;
 
+(* Time priority on the *bid* side. Bob and Charlie both bid $150.00; Bob
+   arrives first (lower server_id), so an incoming sell must fill Bob before
+   Charlie. This is the mirror of the sweep test above: asks got FIFO for
+   free from the ascending key, but bids only get it once matching reads the
+   per-price FIFO queue. Under the old [(price, order_id)]-key traversal this
+   filled Charlie first (LIFO), silently jumping Bob's place in line. *)
+let%expect_test "bid-side time priority: earliest bid at a price fills first"
+  =
+  let t = Harness.create () in
+  submit_
+    ~participant:Harness.bob
+    t
+    (Harness.buy ~price_cents:15000 ~size:50 ());
+  submit_
+    ~participant:Harness.charlie
+    t
+    (Harness.buy ~price_cents:15000 ~size:80 ());
+  submit_ t (Harness.sell ~price_cents:15000 ~size:100 ());
+  [%expect
+    {|
+    ACCEPTED server_id=1 client_id=101 0 BUY 50@$150.00 DAY
+    ACCEPTED server_id=2 client_id=102 0 BUY 80@$150.00 DAY
+    ACCEPTED server_id=3 client_id=103 0 SELL 100@$150.00 DAY
+    FILL fill_id=1 0 $150.00 x50 aggressor=[server_id=3 client_id=103 Alice] SELL resting=[server_id=1 client_id=101 Bob]
+    FILL fill_id=2 0 $150.00 x50 aggressor=[server_id=3 client_id=103 Alice] SELL resting=[server_id=2 client_id=102 Charlie]
+    |}]
+;;
+
 (* ================================================================ *)
 (* IOC (Immediate-or-Cancel) orders *)
 (* ================================================================ *)
@@ -242,7 +270,9 @@ let%expect_test "id validation: a negative id is rejected" =
     {| REJECTED client_id=101 -1 BUY 100@$150.00 reason=unknown symbol |}]
 ;;
 
-let%expect_test "id validation: the last valid id (num_symbols - 1) is accepted" =
+let%expect_test "id validation: the last valid id (num_symbols - 1) is \
+                 accepted"
+  =
   (* GOOG is id 2 — the highest in-range id — so the order rests rather than
      rejecting. Confirms the check accepts the top of the range, not just
      strictly-less. *)
@@ -251,7 +281,9 @@ let%expect_test "id validation: the last valid id (num_symbols - 1) is accepted"
   [%expect {| ACCEPTED server_id=1 client_id=101 2 BUY 100@$150.00 DAY |}]
 ;;
 
-let%expect_test "id validation: book lookup returns None for an out-of-range id" =
+let%expect_test "id validation: book lookup returns None for an \
+                 out-of-range id"
+  =
   let t = Harness.create () in
   Harness.print_book t (Symbol_id.Private.of_int 99);
   [%expect {| unknown symbol 99 |}]

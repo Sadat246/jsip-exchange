@@ -43,10 +43,10 @@ type t =
 
     [symbol_of_string] turns the symbol token into a {!Jsip_types.Symbol_id}.
     It defaults to reading the token as the integer id (["BOOK 0"]); a client
-    that has fetched the symbol directory passes one backed by its name->id map
-    so the user can type a name (["BOOK AAPL"]), which is why the examples
-    above use names. Returns [Error] with a human-readable message if the input
-    is malformed (including an unknown symbol name). *)
+    that has fetched the symbol directory passes one backed by its name->id
+    map so the user can type a name (["BOOK AAPL"]), which is why the
+    examples above use names. Returns [Error] with a human-readable message
+    if the input is malformed (including an unknown symbol name). *)
 val parse
   :  ?symbol_of_string:(string -> Symbol_id.t Or_error.t)
   -> participant:Participant.t

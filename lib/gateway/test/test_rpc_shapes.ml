@@ -78,7 +78,8 @@ let%expect_test "symbol-directory RPC" =
     [%sexp
       (Rpc.Rpc.shapes Rpc_protocol.symbol_directory_rpc
        : Async_rpc_kernel.Rpc_shapes.t)];
-  [%expect {|
+  [%expect
+    {|
     (Rpc (query 86ba5df747eec837f0b391dd49f33f9e)
      (response 4c1e50c93b38c2ad0554cbd929bef3ac))
     |}];

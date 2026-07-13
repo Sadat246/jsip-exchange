@@ -8,10 +8,10 @@ let format_ids ~order_id ~client_order_id =
     (Client_order_id.to_string client_order_id)
 ;;
 
-(* [Fill.to_string] lives in [lib/types] and can only print the raw symbol id.
-   To render the symbol as a name we reformat the fill here, in the gateway's
-   presentation layer, routing the symbol through [symbol_to_string]. The
-   format is otherwise identical to [Fill.to_string]. *)
+(* [Fill.to_string] lives in [lib/types] and can only print the raw symbol
+   id. To render the symbol as a name we reformat the fill here, in the
+   gateway's presentation layer, routing the symbol through
+   [symbol_to_string]. The format is otherwise identical to [Fill.to_string]. *)
 let format_fill ~symbol_to_string (fill : Fill.t) =
   sprintf
     "fill_id=%d %s %s x%d aggressor=[%s %s] %s resting=[%s %s]"
@@ -30,10 +30,10 @@ let format_fill ~symbol_to_string (fill : Fill.t) =
     (Participant.to_string fill.resting_participant)
 ;;
 
-(* [symbol_to_string] decides how a [Symbol_id.t] is shown. It defaults to the
-   raw int (what the pure types can print); the interactive client passes an
-   id->name resolver built from the symbol directory, so events render with
-   symbol names. The default keeps existing (server-side, test) output
+(* [symbol_to_string] decides how a [Symbol_id.t] is shown. It defaults to
+   the raw int (what the pure types can print); the interactive client passes
+   an id->name resolver built from the symbol directory, so events render
+   with symbol names. The default keeps existing (server-side, test) output
    unchanged. *)
 let format_event ?(symbol_to_string = Symbol_id.to_string) = function
   | Exchange_event.Order_accept { order_id; participant = _; request } ->

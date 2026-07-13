@@ -257,8 +257,9 @@ let bench_submit_sweep ~n =
 (* Symbol-lookup benchmarks: vary the NUMBER OF SYMBOLS and time the server's
    symbol->book resolution two ways, to show the payoff of putting the id on
    the wire:
-   - [book_lookup_id]: the request carries a [Symbol_id.t], so the engine does
-     a bounds check + array index. NO hashing — flat in the symbol count.
+   - [book_lookup_id]: the request carries a [Symbol_id.t], so the engine
+     does a bounds check + array index. NO hashing — flat in the symbol
+     count.
    - [book_lookup_hash]: the OLD path, where the request carried a [Symbol.t]
      name that had to be HASHED (into a [Symbol.Table]) to find its id before
      indexing. Reconstructed here purely for the comparison. *)
@@ -280,8 +281,8 @@ let bench_book_lookup_id ~n =
 ;;
 
 (* Old path: hash the symbol NAME to its id via a [Symbol.Table], then index.
-   [books] is a stand-in [unit array] — we're timing the hash + index, not the
-   book contents. Query is a present NAME, built once outside the thunk. *)
+   [books] is a stand-in [unit array] — we're timing the hash + index, not
+   the book contents. Query is a present NAME, built once outside the thunk. *)
 let bench_book_lookup_hash ~n =
   let ids_by_name = Symbol.Table.create () in
   List.iteri (List.init n ~f:symbol_n) ~f:(fun id name ->

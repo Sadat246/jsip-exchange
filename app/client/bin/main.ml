@@ -22,8 +22,8 @@ let run_client ~host ~port ~participant_name =
   in
   (* Fetch the name<->id directory once. The wire carries [Symbol_id.t]s, so
      the client needs it both ways: [name -> id] to turn the "AAPL" the user
-     types into the id the server wants, and [id -> name] to render events back
-     as names. *)
+     types into the id the server wants, and [id -> name] to render events
+     back as names. *)
   let%bind symbol_directory =
     Rpc.Rpc.dispatch_exn Rpc_protocol.symbol_directory_rpc conn ()
   in
@@ -128,7 +128,9 @@ Continue entering commands as normal.|}];
                 continues running concurrently. *)
              don't_wait_for
                (Pipe.iter_without_pushback reader ~f:(fun event ->
-                  let event = Protocol.format_event ~symbol_to_string event in
+                  let event =
+                    Protocol.format_event ~symbol_to_string event
+                  in
                   print_endline [%string "[MD] %{event}"]));
              loop ())
         | Ok (Login { name = _ }) ->

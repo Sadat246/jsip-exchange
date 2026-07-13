@@ -22,9 +22,9 @@ module Verb = struct
   [@@deriving string ~case_insensitive ~capitalize:"SCREAMING_SNAKE_CASE"]
 end
 
-(* By default the symbol token IS the integer id ("BOOK 0"). A client that has
-   fetched the symbol directory passes a name-resolving [symbol_of_string]
-   instead, so the user can type a name ("BOOK AAPL"). *)
+(* By default the symbol token IS the integer id ("BOOK 0"). A client that
+   has fetched the symbol directory passes a name-resolving
+   [symbol_of_string] instead, so the user can type a name ("BOOK AAPL"). *)
 let default_symbol_of_string s =
   match Int.of_string_opt s with
   | Some n when n >= 0 -> Ok (Symbol_id.Private.of_int n)
@@ -121,10 +121,7 @@ let parse_cancel tokens =
   | _ -> Or_error.error_string "expected: CANCEL <client_order_id>"
 ;;
 
-let parse
-  ?(symbol_of_string = default_symbol_of_string)
-  ~participant
-  line
+let parse ?(symbol_of_string = default_symbol_of_string) ~participant line
   : t Or_error.t
   =
   let open Or_error.Let_syntax in
@@ -146,8 +143,10 @@ let parse
          | Subscribe ->
            let%map symbol = parse_symbol ~symbol_of_string rest in
            (Subscribe symbol : t)
-         | Buy -> parse_order_request ~symbol_of_string ~participant Side.Buy rest
-         | Sell -> parse_order_request ~symbol_of_string ~participant Sell rest
+         | Buy ->
+           parse_order_request ~symbol_of_string ~participant Side.Buy rest
+         | Sell ->
+           parse_order_request ~symbol_of_string ~participant Sell rest
          | Cancel -> parse_cancel rest
          | exception _ ->
            Or_error.error_string [%string "unrecognized command: %{verb}"])
