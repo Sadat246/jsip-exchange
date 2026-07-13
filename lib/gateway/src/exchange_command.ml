@@ -5,8 +5,8 @@ type t =
   | Login of { name : string }
   | Submit of Order.Request.t
   | Cancel of { client_order_id : Client_order_id.t }
-  | Book of Symbol.t
-  | Subscribe of Symbol.t
+  | Book of Symbol_id.t
+  | Subscribe of Symbol_id.t
 [@@deriving sexp_of]
 
 let to_string t = sexp_of_t t |> Sexp.to_string
@@ -22,15 +22,20 @@ module Verb = struct
   [@@deriving string ~case_insensitive ~capitalize:"SCREAMING_SNAKE_CASE"]
 end
 
-let parse_symbol tokens =
+(* By default the symbol token IS the integer id ("BOOK 0"). A client that has
+   fetched the symbol directory passes a name-resolving [symbol_of_string]
+   instead, so the user can type a name ("BOOK AAPL"). *)
+let default_symbol_of_string s =
+  match Int.of_string_opt s with
+  | Some n when n >= 0 -> Ok (Symbol_id.Private.of_int n)
+  | Some _ -> Or_error.error_string "symbol id must be non-negative"
+  | None -> Or_error.error_string [%string "invalid symbol id: %{s}"]
+;;
+
+let parse_symbol ~symbol_of_string tokens =
   match tokens with
   | [] -> Or_error.error_string "missing required symbol argument"
-  | symbol :: [] ->
-    (try Ok (Symbol.of_string symbol) with
-     | exn ->
-       let exn_str = Exn.to_string exn in
-       Or_error.error_string
-         [%string "invalid symbol: %{symbol}\nexception: %{exn_str}"])
+  | [ symbol ] -> symbol_of_string symbol
   | _ :: rest ->
     let trailing = String.concat ~sep:" " rest in
     Or_error.error_string
@@ -52,7 +57,7 @@ let parse_client_order_id client_order_id_str =
       [%string "invalid client order id: %{client_order_id_str}"]
 ;;
 
-let parse_order_request ~participant side tokens =
+let parse_order_request ~symbol_of_string ~participant side tokens =
   let open Or_error.Let_syntax in
   match tokens with
   | client_order_id_str :: symbol_str :: size_str :: price_str :: rest ->
@@ -70,13 +75,7 @@ let parse_order_request ~participant side tokens =
         Or_error.error_string
           [%string "invalid price: %{price_str}\nexception: %{exn_str}"]
     in
-    let%bind symbol =
-      try Ok (Symbol.of_string symbol_str) with
-      | exn ->
-        let exn_str = Exn.to_string exn in
-        Or_error.error_string
-          [%string "invalid symbol: %{symbol_str}\nexception: %{exn_str}"]
-    in
+    let%bind symbol = symbol_of_string symbol_str in
     let%bind time_in_force =
       match rest with
       | [] -> Ok Time_in_force.Day
@@ -122,7 +121,12 @@ let parse_cancel tokens =
   | _ -> Or_error.error_string "expected: CANCEL <client_order_id>"
 ;;
 
-let parse ~participant line : t Or_error.t =
+let parse
+  ?(symbol_of_string = default_symbol_of_string)
+  ~participant
+  line
+  : t Or_error.t
+  =
   let open Or_error.Let_syntax in
   let line = String.strip line in
   if String.is_empty line
@@ -137,13 +141,13 @@ let parse ~participant line : t Or_error.t =
         (match Verb.of_string verb with
          | Verb.Login -> parse_login rest
          | Book ->
-           let%map symbol = parse_symbol rest in
+           let%map symbol = parse_symbol ~symbol_of_string rest in
            (Book symbol : t)
          | Subscribe ->
-           let%map symbol = parse_symbol rest in
+           let%map symbol = parse_symbol ~symbol_of_string rest in
            (Subscribe symbol : t)
-         | Buy -> parse_order_request ~participant Side.Buy rest
-         | Sell -> parse_order_request ~participant Sell rest
+         | Buy -> parse_order_request ~symbol_of_string ~participant Side.Buy rest
+         | Sell -> parse_order_request ~symbol_of_string ~participant Sell rest
          | Cancel -> parse_cancel rest
          | exception _ ->
            Or_error.error_string [%string "unrecognized command: %{verb}"])

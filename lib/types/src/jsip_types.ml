@@ -12,4 +12,5 @@ module Price = Price
 module Side = Side
 module Size = Size
 module Symbol = Symbol
+module Symbol_id = Symbol_id
 module Time_in_force = Time_in_force

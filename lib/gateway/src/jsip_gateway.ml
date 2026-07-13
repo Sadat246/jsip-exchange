@@ -6,3 +6,4 @@ module Session = Session
 module Dispatcher = Dispatcher
 module Exchange_command = Exchange_command
 module Exchange_server = Exchange_server
+module Participant_id = Participant_id

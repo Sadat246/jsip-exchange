@@ -18,17 +18,19 @@ let default_config : Market_maker.Config.t =
 
 let%expect_test "seed_book: places symmetric bids and asks around fair value"
   =
-  with_server ~symbols:[ Harness.aapl ] (fun ~server:_ ~port ->
-    let%bind mm = connect_as ~port ~participant:Harness.market_maker in
-    let%bind () = Market_maker.seed_book default_config (connection mm) in
-    [%expect
-      {|
-      [MarketMaker] ACCEPTED server_id=1 client_id=101 AAPL BUY 100@$149.90 DAY
-      [MarketMaker] ACCEPTED server_id=2 client_id=102 AAPL SELL 100@$150.10 DAY
-      [MarketMaker] ACCEPTED server_id=3 client_id=103 AAPL BUY 100@$149.89 DAY
-      [MarketMaker] ACCEPTED server_id=4 client_id=104 AAPL SELL 100@$150.11 DAY
-      [MarketMaker] ACCEPTED server_id=5 client_id=105 AAPL BUY 100@$149.88 DAY
-      [MarketMaker] ACCEPTED server_id=6 client_id=106 AAPL SELL 100@$150.12 DAY
+  with_server
+    ~symbols:[ Jsip_types.Symbol.of_string "AAPL" ]
+    (fun ~server:_ ~port ->
+      let%bind mm = connect_as ~port ~participant:Harness.market_maker in
+      let%bind () = Market_maker.seed_book default_config (connection mm) in
+      [%expect
+        {|
+      [MarketMaker] ACCEPTED server_id=1 client_id=101 0 BUY 100@$149.90 DAY
+      [MarketMaker] ACCEPTED server_id=2 client_id=102 0 SELL 100@$150.10 DAY
+      [MarketMaker] ACCEPTED server_id=3 client_id=103 0 BUY 100@$149.89 DAY
+      [MarketMaker] ACCEPTED server_id=4 client_id=104 0 SELL 100@$150.11 DAY
+      [MarketMaker] ACCEPTED server_id=5 client_id=105 0 BUY 100@$149.88 DAY
+      [MarketMaker] ACCEPTED server_id=6 client_id=106 0 SELL 100@$150.12 DAY
       |}];
-    return ())
+      return ())
 ;;

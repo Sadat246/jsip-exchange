@@ -10,7 +10,7 @@
 type t =
   { fill_id : int
   (** Unique fill identifier, assigned sequentially by the matching engine. *)
-  ; symbol : Symbol.t
+  ; symbol : Symbol_id.t
   ; price : Price.t (** The price at which the trade occurred. *)
   ; size : Size.t (** The number of shares/units traded. *)
   ; aggressor_order_id : Order_id.t

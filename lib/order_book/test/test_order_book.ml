@@ -349,7 +349,7 @@ let%expect_test "snapshot lists levels in price-time priority order" =
      bids should appear highest-first and asks lowest-first. *)
   [%expect
     {|
-    === AAPL ===
+    === 0 ===
       BIDS:
         $150.00 x100
         $149.95 x100
@@ -359,5 +359,77 @@ let%expect_test "snapshot lists levels in price-time priority order" =
         $150.10 x100
         $150.15 x100
       BBO: $150.00 x100 / $150.05 x100
+    |}]
+;;
+
+let%expect_test "snapshot aggregates multiple participants at one price \
+                 into a single level"
+  =
+  let book = Order_book.create Harness.aapl in
+  Order_book.add
+    book
+    (make_order
+       ~side:Sell
+       ~price_cents:15000
+       ~order_id:1
+       ~size:100
+       ~participant:Harness.alice
+       ());
+  Order_book.add
+    book
+    (make_order
+       ~side:Sell
+       ~price_cents:15000
+       ~order_id:2
+       ~size:75
+       ~participant:Harness.bob
+       ());
+  Order_book.add
+    book
+    (make_order
+       ~side:Sell
+       ~price_cents:15000
+       ~order_id:3
+       ~size:50
+       ~participant:Harness.alice
+       ());
+  (* A second ask at a different price must stay its own level. *)
+  Order_book.add
+    book
+    (make_order
+       ~side:Sell
+       ~price_cents:15010
+       ~order_id:4
+       ~size:100
+       ~participant:Harness.bob
+       ());
+  Order_book.add
+    book
+    (make_order
+       ~side:Buy
+       ~price_cents:14990
+       ~order_id:5
+       ~size:100
+       ~participant:Harness.alice
+       ());
+  Order_book.add
+    book
+    (make_order
+       ~side:Buy
+       ~price_cents:14990
+       ~order_id:6
+       ~size:40
+       ~participant:Harness.bob
+       ());
+  print_endline (Order_book.snapshot book |> Book.to_string);
+  [%expect
+    {|
+    === 0 ===
+      BIDS:
+        $149.90 x140
+      ASKS:
+        $150.00 x225
+        $150.10 x100
+      BBO: $149.90 x140 / $150.00 x225
     |}]
 ;;

@@ -13,7 +13,7 @@ module Context = Bot_runtime.Context
 
 module Config = struct
   type t =
-    { symbols : Symbol.t list
+    { symbols : Symbol_id.t list
     ; cycles_per_tick : int
     ; size : int
     ; pct_marketable : int

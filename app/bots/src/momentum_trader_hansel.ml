@@ -62,7 +62,7 @@ end
 
 module Config = struct
   type t =
-    { symbol : Symbol.t (** The symbol the bot watches and trades. *)
+    { symbol : Symbol_id.t (** The symbol the bot watches and trades. *)
     ; window_capacity : int
     (** How many recent trade prices the signal looks across. *)
     ; threshold_cents : int
@@ -212,9 +212,9 @@ let on_tick (config : Config.t) context =
 let on_event (config : Config.t) context (event : Exchange_event.t) =
   (match event with
    | Trade_report { symbol; price; size = _ } ->
-     if Symbol.equal symbol config.symbol then Ring.push config.ring price
+     if Symbol_id.equal symbol config.symbol then Ring.push config.ring price
    | Fill fill ->
-     if Symbol.equal fill.symbol config.symbol
+     if Symbol_id.equal fill.symbol config.symbol
      then apply_fill config context fill
    | Order_accept _ | Order_cancel _ | Order_reject _ | Cancel_reject _
    | Best_bid_offer_update _ ->

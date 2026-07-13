@@ -41,7 +41,10 @@ open Jsip_order_book
 (* Setup helpers *)
 (* ---------------------------------------------------------------- *)
 
-let aapl = Symbol.of_string "AAPL"
+(* Orders, books, and lookups are keyed by [Symbol_id.t]; the engine's symbol
+   registry assigns AAPL id 0 since it is first in the symbol-name list. *)
+let aapl = Symbol_id.Private.of_int 0
+let aapl_name = Symbol.of_string "AAPL"
 let alice = Participant.of_string "Alice"
 let bob = Participant.of_string "Bob"
 
@@ -71,7 +74,7 @@ let book_with_n_asks ?(min_price = 10_000) n =
 
 (** Build a matching engine with [n] resting sells on AAPL. *)
 let engine_with_n_asks ?(min_price = 10_000) n =
-  let engine = Matching_engine.create [ aapl ] in
+  let engine = Matching_engine.create [ aapl_name ] in
   for i = 1 to n do
     ignore
       (Matching_engine.submit
@@ -251,6 +254,48 @@ let bench_submit_sweep ~n =
     engine := engine_with_n_asks n)
 ;;
 
+(* Symbol-lookup benchmarks: vary the NUMBER OF SYMBOLS and time the server's
+   symbol->book resolution two ways, to show the payoff of putting the id on
+   the wire:
+   - [book_lookup_id]: the request carries a [Symbol_id.t], so the engine does
+     a bounds check + array index. NO hashing — flat in the symbol count.
+   - [book_lookup_hash]: the OLD path, where the request carried a [Symbol.t]
+     name that had to be HASHED (into a [Symbol.Table]) to find its id before
+     indexing. Reconstructed here purely for the comparison. *)
+
+let symbol_n i = Symbol.of_string [%string "SYM%{i#Int}"]
+
+let engine_with_n_symbols n =
+  Matching_engine.create (List.init n ~f:symbol_n)
+;;
+
+(* New path: id straight off the wire -> bounds-check + array index. *)
+let bench_book_lookup_id ~n =
+  let engine = engine_with_n_symbols n in
+  let query = Symbol_id.Private.of_int (n / 2) in
+  Bench.Test.create
+    ~name:[%string "book_lookup_id (symbols=%{n#Int})"]
+    (fun () ->
+       ignore (Matching_engine.book engine query : Order_book.t option))
+;;
+
+(* Old path: hash the symbol NAME to its id via a [Symbol.Table], then index.
+   [books] is a stand-in [unit array] — we're timing the hash + index, not the
+   book contents. Query is a present NAME, built once outside the thunk. *)
+let bench_book_lookup_hash ~n =
+  let ids_by_name = Symbol.Table.create () in
+  List.iteri (List.init n ~f:symbol_n) ~f:(fun id name ->
+    Hashtbl.set ids_by_name ~key:name ~data:id);
+  let books = Array.create ~len:n () in
+  let query = symbol_n (n / 2) in
+  Bench.Test.create
+    ~name:[%string "book_lookup_hash (symbols=%{n#Int})"]
+    (fun () ->
+       match Hashtbl.find ids_by_name query with
+       | Some id -> ignore (books.(id) : unit)
+       | None -> ())
+;;
+
 (* ---------------------------------------------------------------- *)
 (* Allocation measurement *)
 (* ---------------------------------------------------------------- *)
@@ -290,26 +335,70 @@ let bench_find_match_alloc ~n =
     (fun () -> ignore (Order_book.find_match book incoming : Order.t option))
 ;;
 
+(* Bench snapshot *)
+(** Build a book with [n] resting sells all at the SAME price — so a snapshot
+    must aggregate all [n] into a single level. Contrast [book_with_n_asks],
+    which spreads them across distinct prices (no aggregation). *)
+let book_with_n_asks_same_price ?(price_cents = 15_000) n =
+  let book = Order_book.create aapl in
+  let gen = Order_id.Generator.create () in
+  for i = 1 to n do
+    let order =
+      Order.create
+        { client_order_id = Client_order_id.of_int i
+        ; symbol = aapl
+        ; participant = bob
+        ; side = Sell
+        ; price = Price.of_int_cents price_cents (* SAME for every order *)
+        ; size = Size.of_int 100
+        ; time_in_force = Day
+        }
+        ~order_id:(Order_id.Generator.next gen)
+    in
+    Order_book.add book order
+  done;
+  book, gen
+;;
+
+let bench_snapshot ~n =
+  let book, _gen = book_with_n_asks_same_price n in
+  Bench.Test.create ~name:[%string "snapshot (n=%{n#Int})"] (fun () ->
+    ignore (Order_book.snapshot book : Book.t))
+;;
+
 (* ---------------------------------------------------------------- *)
 (* Main *)
 (* ---------------------------------------------------------------- *)
+let sizes = [ 10; 50; 100; 500 ]
+let symbol_counts = [ 10; 100; 1_000; 10_000 ]
+
+let tests =
+  List.concat
+    [ (* Order book micro-benchmarks at various sizes *)
+      List.map sizes ~f:(fun n -> bench_find_match ~n)
+    ; List.map sizes ~f:(fun n -> bench_find_match_no_cross ~n)
+    ; List.map sizes ~f:(fun n -> bench_best_bid_offer ~n)
+    ; [ bench_add_remove ~n:100 ]
+    ; (* Matching engine end-to-end *)
+      List.map sizes ~f:(fun n -> bench_submit_ioc_cross ~n)
+    ; List.map sizes ~f:(fun n -> bench_submit_ioc_no_match ~n)
+    ; List.map [ 10; 50; 100 ] ~f:(fun n -> bench_submit_sweep ~n)
+    ; (* Allocation awareness *)
+      [ bench_find_match_alloc ~n:100 ]
+    ]
+;;
 
 let () =
-  let sizes = [ 10; 50; 100; 500 ] in
-  let tests =
-    List.concat
-      [ (* Order book micro-benchmarks at various sizes *)
-        List.map sizes ~f:(fun n -> bench_find_match ~n)
-      ; List.map sizes ~f:(fun n -> bench_find_match_no_cross ~n)
-      ; List.map sizes ~f:(fun n -> bench_best_bid_offer ~n)
-      ; [ bench_add_remove ~n:100 ]
-      ; (* Matching engine end-to-end *)
-        List.map sizes ~f:(fun n -> bench_submit_ioc_cross ~n)
-      ; List.map sizes ~f:(fun n -> bench_submit_ioc_no_match ~n)
-      ; List.map [ 10; 50; 100 ] ~f:(fun n -> bench_submit_sweep ~n)
-      ; (* Allocation awareness *)
-        [ bench_find_match_alloc ~n:100 ]
-      ]
-  in
-  Command_unix.run (Bench.make_command tests)
+  Command_unix.run
+    (Command.group
+       ~summary:"JSIP order-book benchmarks"
+       [ "existing", Bench.make_command tests
+       ; ( "snapshot"
+         , Bench.make_command
+             (List.map sizes ~f:(fun n -> bench_snapshot ~n)) )
+       ; ( "symbols"
+         , Bench.make_command
+             (List.concat_map symbol_counts ~f:(fun n ->
+                [ bench_book_lookup_id ~n; bench_book_lookup_hash ~n ])) )
+       ])
 ;;

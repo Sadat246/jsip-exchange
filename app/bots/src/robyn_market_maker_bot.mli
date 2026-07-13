@@ -19,5 +19,5 @@ val create_config
   -> size_per_level:Int.t
   -> num_levels:Int.t
   -> inventory_skew_cents_per_share:Int.t
-  -> symbols:Symbol.t List.t
+  -> symbols:Symbol_id.t List.t
   -> Config.t

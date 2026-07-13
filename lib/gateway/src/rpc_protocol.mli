@@ -42,7 +42,15 @@ val cancel_order_rpc : (Client_order_id.t, unit Or_error.t) Rpc.Rpc.t
 
 (** Query the order book for a given symbol. Returns a structured snapshot of
     all resting orders on both sides, if a book for that symbol exists. *)
-val book_query_rpc : (Symbol.t, Book.t option) Rpc.Rpc.t
+val book_query_rpc : (Symbol_id.t, Book.t option) Rpc.Rpc.t
+
+(** The exchange's symbol directory: every traded symbol paired with its
+    server-assigned {!Jsip_types.Symbol_id}. Since all other RPCs carry
+    [Symbol_id.t] on the wire (never the name), a client fetches this once
+    after connecting to learn the mapping — [name -> id] to build orders and
+    subscriptions, [id -> name] to render incoming events. Ordered
+    [(name, id)] because resolving a name to its id is the primary lookup. *)
+val symbol_directory_rpc : (unit, (Symbol.t * Symbol_id.t) list) Rpc.Rpc.t
 
 (** Subscribe to market data for one or more symbols. The server pushes BBO
     updates and trade reports as they happen via a single pipe. The query is
@@ -50,7 +58,7 @@ val book_query_rpc : (Symbol.t, Book.t option) Rpc.Rpc.t
     avoids the overhead of opening a separate pipe per symbol when a client
     cares about several. *)
 val market_data_rpc
-  : (Symbol.t list, Exchange_event.t, Error.t) Rpc.Pipe_rpc.t
+  : (Symbol_id.t list, Exchange_event.t, Error.t) Rpc.Pipe_rpc.t
 
 (** Subscribe to the full audit log: every [Exchange_event.t] the matching
     engine produces, across every symbol and participant.

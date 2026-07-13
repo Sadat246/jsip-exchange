@@ -229,10 +229,10 @@ let%expect_test "pump-and-dump: accumulate, flip on price rise, then dump" =
     phase=Distribute position=40 realized_pnl_cents=-600460
     phase=Distribute position=0 realized_pnl_cents=7540
     phase=Done position=0 realized_pnl_cents=7540
-    BUY AAPL 20@$150.12 IOC
-    BUY AAPL 20@$150.13 IOC
-    SELL AAPL 20@$151.88 IOC
-    SELL AAPL 20@$151.87 IOC
+    BUY 0 20@$150.12 IOC
+    BUY 0 20@$150.13 IOC
+    SELL 0 20@$151.88 IOC
+    SELL 0 20@$151.87 IOC
     |}];
   return ()
 ;;

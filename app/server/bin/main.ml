@@ -38,7 +38,8 @@ let connect_as ~where_to_connect participant =
 ;;
 
 let seed_market_maker ~where_to_connect =
-  let aapl = Symbol.of_string "AAPL" in
+  (* AAPL sits at position 0 in [default_symbols], so its id is 0. *)
+  let aapl = Symbol_id.Private.of_int 0 in
   let mm_participant = Participant.of_string "MarketMaker" in
   let config : Market_maker.Config.t =
     { participant = mm_participant
@@ -63,10 +64,12 @@ let seed_market_maker ~where_to_connect =
    tests. *)
 let trade_back_and_forth ~where_to_connect =
   (* One pair of MMs per symbol, anchored at a representative fair value. *)
+  (* Symbol ids match the position in [default_symbols]: AAPL=0, TSLA=1,
+     GOOG=2. *)
   let symbol_anchors =
-    [ Symbol.of_string "AAPL", 15000
-    ; Symbol.of_string "TSLA", 25000
-    ; Symbol.of_string "GOOG", 28000
+    [ Symbol_id.Private.of_int 0, 15000
+    ; Symbol_id.Private.of_int 1, 25000
+    ; Symbol_id.Private.of_int 2, 28000
     ]
   in
   (* MM_Low's fair value sits [low_offset_cents] below the anchor and

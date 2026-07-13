@@ -40,7 +40,7 @@ val submit
 
 (** The order book for a given symbol, or [None] if the symbol is not traded
     on this engine. *)
-val book : t -> Symbol.t -> Order_book.t option
+val book : t -> Symbol_id.t -> Order_book.t option
 
 (* NOTE: Both errors produce the same "order not found" message as per the
    spec and the client cannot distinguish them. Here are some design notes in

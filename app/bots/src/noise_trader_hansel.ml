@@ -44,7 +44,7 @@ let max_price_offset_cents = 3
 
 module Config = struct
   type t =
-    { symbols : Symbol.t list
+    { symbols : Symbol_id.t list
     (** Symbols the bot trades, chosen uniformly. *)
     ; mean_size : int (** Center of each order's randomized size. *)
     ; tick_chance : Percent.t
@@ -59,7 +59,7 @@ module Config = struct
         [Ioc]-vs-[Day] probability, so a new order type is supported by
         adding a weighted entry rather than by changing this bot. Resting
         [Day] orders pile up on the book, which later exercises rely on. *)
-    ; bbo_cache : Bbo.t Symbol.Table.t
+    ; bbo_cache : Bbo.t Symbol_id.Table.t
     (** Latest BBO per symbol, maintained from market-data events. *)
     ; generator : Client_order_id.Generator.t
     (** Sequential, collision-free client order IDs for our orders. *)
@@ -77,7 +77,7 @@ module Config = struct
     ; tick_chance
     ; aggressiveness
     ; time_in_force_distribution
-    ; bbo_cache = Symbol.Table.create ()
+    ; bbo_cache = Symbol_id.Table.create ()
     ; generator = Client_order_id.Generator.create ()
     }
   ;;

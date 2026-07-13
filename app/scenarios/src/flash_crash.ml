@@ -15,14 +15,18 @@ let description =
    makers pull quotes and liquidity collapses."
 ;;
 
-let symbol = Symbol.of_string "AAPL"
+(* The engine assigns ids by position, so AAPL (the only symbol) is id 0.
+   [symbol] is the id used for orders, the oracle, and news; [symbol_name] is
+   the name handed to the engine via {!Scenario_config.symbols}. *)
+let symbol = Symbol_id.Private.of_int 0
+let symbol_name = Symbol.of_string "AAPL"
 let initial_price_cents = 15000
 
 (* Higher volatility and weak mean reversion: we want the market jumpy and,
    once the crash starts, we do *not* want the fundamental snapping back to
    its starting level -- the point is a sustained collapse, not a dip. *)
 let oracle_config : Fundamental_oracle.Config.t =
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     [ ( symbol
       , { Fundamental_oracle.Config.initial_price_cents
         ; volatility_cents_per_sec = 5.0
@@ -175,7 +179,7 @@ let momentum_trader_spec =
 
 let configure () : Scenario_config.t =
   { name
-  ; symbols = [ symbol ]
+  ; symbols = [ symbol_name ]
   ; oracle_config
   ; news = crash_news
   ; bots =

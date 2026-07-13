@@ -52,7 +52,7 @@ val on_event : Config.t -> Context.t -> Exchange_event.t -> unit Deferred.t
     - [ioc_pct]: percent chance (0-100) that an order is [Ioc] rather than
       [Day]. *)
 val create_config
-  :  symbols:Symbol.t list
+  :  symbols:Symbol_id.t list
   -> avg_size:int
   -> tick_chance:float
   -> aggressiveness_pct:int

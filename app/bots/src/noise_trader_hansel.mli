@@ -34,7 +34,7 @@ module Config : sig
         {!Time_in_force.t} means a new order type is mixed in by adding a
         weighted entry rather than by changing this bot. *)
   val create
-    :  symbols:Symbol.t list
+    :  symbols:Symbol_id.t list
     -> mean_size:int
     -> tick_chance:Percent.t
     -> aggressiveness:Percent.t

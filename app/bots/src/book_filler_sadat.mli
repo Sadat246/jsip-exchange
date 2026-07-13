@@ -26,7 +26,7 @@ open Jsip_types
 
 module Config : sig
   type t =
-    { symbols : Symbol.t list
+    { symbols : Symbol_id.t list
     (** Books to flood. The bot spreads its per-tick orders across these
         symbols in round-robin. Must be non-empty. *)
     ; orders_per_tick : int

@@ -12,7 +12,7 @@ type t =
           (module Jsip_bot_runtime.Bot_runtime.Bot with type Config.t = 'cfg)
       ; config : 'cfg
       ; participant : Participant.t
-      ; symbols : Symbol.t list
+      ; symbols : Symbol_id.t list
       ; rng_seed : int
       ; tick_interval : Time_ns.Span.t
       ; is_marketdata_consumer : bool

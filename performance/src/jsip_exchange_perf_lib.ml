@@ -43,9 +43,25 @@ let bench_silly =
    side-effecting [List.init], whose evaluation order isn't guaranteed
    left-to-right. *)
 let seq_tests ~name ~create ~set ~get =
-  (* "TODO: benchmark for part 4, 0b" *)
-  ignore (name, create, set, get);
-  []
+  let build n =
+    let t = create () in
+    (* Insert 0,1,…,n-1 strictly in index order: positional [set] appends at
+       the end, and [List.init]'s evaluation order isn't guaranteed
+       left-to-right, so materialize the indices first, then [List.iter] them
+       (which is left-to-right) doing the side-effecting [set]. *)
+    List.iter (List.init n ~f:Fn.id) ~f:(fun key -> set t ~key ~data:key);
+    t
+  in
+  List.concat_map sizes ~f:(fun n ->
+    let prebuilt = build n in
+    [ Bench.Test.create ~name:(sprintf "%s build (n=%d)" name n) (fun () ->
+        ignore (build n))
+    ; Bench.Test.create ~name:(sprintf "%s get_hit (n=%d)" name n) (fun () ->
+        ignore (get prebuilt (present_key n) : int option))
+    ; Bench.Test.create
+        ~name:(sprintf "%s get_miss (n=%d)" name n)
+        (fun () -> ignore (get prebuilt absent_key : int option))
+    ])
 ;;
 
 let bench_sequential =
@@ -68,9 +84,24 @@ let bench_sequential =
    [Int.to_string] for string keys), so the same helper covers both int- and
    string-keyed stores. *)
 let assoc_tests ~name ~create ~set ~get ~key_of_index =
-  (* "TODO: benchmark for part 4, 0c" *)
-  ignore (name, create, set, get, key_of_index);
-  []
+  let build n =
+    let store = create () in
+    (* associative set works at any key, so insertion order doesn't matter *)
+    List.iter (List.init n ~f:Fn.id) ~f:(fun i ->
+      set store ~key:(key_of_index i) ~data:i);
+    store
+  in
+  List.concat_map sizes ~f:(fun n ->
+    let prebuilt = build n in
+    [ Bench.Test.create ~name:(sprintf "%s build (n=%d)" name n) (fun () ->
+        ignore (build n))
+    ; Bench.Test.create ~name:(sprintf "%s get_hit (n=%d)" name n) (fun () ->
+        ignore (get prebuilt (key_of_index (present_key n)) : int option))
+    ; Bench.Test.create
+        ~name:(sprintf "%s get_miss (n=%d)" name n)
+        (fun () ->
+           ignore (get prebuilt (key_of_index absent_key) : int option))
+    ])
 ;;
 
 let bench_associative =
@@ -118,8 +149,28 @@ let bench_associative =
    in how much they allocate (watch the mWd/Run column). Inputs are prebuilt
    so the timed op is just the pattern under test. *)
 let bench_allocation =
-  (* TODO: benchmark for part 4, 0d *)
-  []
+  List.concat_map sizes ~f:(fun n ->
+    let input = List.init n ~f:Fn.id in
+    [ Bench.Test.create
+        ~name:(sprintf "Build_list.silly (n=%d)" n)
+        (fun () -> ignore (Allocations.Build_list.silly input : int list))
+    ; Bench.Test.create
+        ~name:(sprintf "Build_list.non_silly (n=%d)" n)
+        (fun () ->
+           ignore (Allocations.Build_list.non_silly input : int list))
+    ; Bench.Test.create
+        ~name:(sprintf "First_match.silly (n=%d)" n)
+        (fun () ->
+           ignore
+             (Allocations.First_match.silly input ~f:(fun _ -> true)
+              : int option))
+    ; Bench.Test.create
+        ~name:(sprintf "First_match.non_silly (n=%d)" n)
+        (fun () ->
+           ignore
+             (Allocations.First_match.non_silly input ~f:(fun _ -> true)
+              : int option))
+    ])
 ;;
 
 let command =

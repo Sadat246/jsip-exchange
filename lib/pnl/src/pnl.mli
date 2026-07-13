@@ -62,7 +62,7 @@ val apply_fill : t -> Fill.t -> t
     [Trade_report.t] in this codebase — [Trade_report] is a constructor of
     {!Exchange_event.t} carrying [{ symbol; price; size }]. P&L only needs
     the symbol and price, so we take those directly.) *)
-val apply_trade_report : t -> symbol:Symbol.t -> price:Price.t -> t
+val apply_trade_report : t -> symbol:Symbol_id.t -> price:Price.t -> t
 
 (** A snapshot of one participant's P&L. *)
 module Summary : sig
@@ -71,7 +71,7 @@ module Summary : sig
       reference price has been seen yet. *)
   module Per_symbol : sig
     type t =
-      { symbol : Symbol.t
+      { symbol : Symbol_id.t
       ; inventory : int
       ; average_entry_price : Price.t option
       ; reference_price : Price.t option

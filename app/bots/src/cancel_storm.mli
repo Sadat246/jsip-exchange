@@ -68,7 +68,7 @@ val on_event : Config.t -> Context.t -> Exchange_event.t -> unit Deferred.t
       for a resting one. To make marketable orders actually cross a market
       maker's quote, set this larger than that maker's half-spread. *)
 val create_config
-  :  symbols:Symbol.t list
+  :  symbols:Symbol_id.t list
   -> cycles_per_tick:int
   -> size:int
   -> pct_marketable:int

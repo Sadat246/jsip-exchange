@@ -15,7 +15,7 @@ module Context = Bot_runtime.Context
 
 module Config = struct
   type t =
-    { symbol_state : Bbo.t Symbol.Table.t
+    { symbol_state : Bbo.t Symbol_id.Table.t
         (* The symbols this bot trades. Each maps to the latest BBO seen for
            it (or [Bbo.empty] until the first [Best_bid_offer_update]
            arrives). *)
@@ -162,7 +162,7 @@ let create_config
   ~ioc_pct
   : Config.t
   =
-  let symbol_state = Hashtbl.create (module Symbol) in
+  let symbol_state = Hashtbl.create (module Symbol_id) in
   List.iter symbols ~f:(fun symbol ->
     Hashtbl.set symbol_state ~key:symbol ~data:Bbo.empty);
   { symbol_state

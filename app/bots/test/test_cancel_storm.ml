@@ -129,9 +129,9 @@ let%expect_test "a short storm: submit then cancel, over and over" =
      |> String.concat ~sep:", ");
   [%expect
     {|
-    SELL AAPL 7@$149.80 DAY
-    SELL AAPL 7@$149.80 DAY
-    SELL AAPL 7@$149.80 DAY
+    SELL 0 7@$149.80 DAY
+    SELL 0 7@$149.80 DAY
+    SELL 0 7@$149.80 DAY
     cancelled ids: 1, 2, 3
     |}];
   return ()

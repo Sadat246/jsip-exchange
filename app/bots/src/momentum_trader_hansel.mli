@@ -52,7 +52,7 @@ module Config : sig
     :  ?cooldown_ticks:int
     -> ?entry_time_in_force:Time_in_force.t
     -> ?aggression_offset_cents:int
-    -> symbol:Symbol.t
+    -> symbol:Symbol_id.t
     -> window_capacity:int
     -> threshold_cents:int
     -> max_order_size:int

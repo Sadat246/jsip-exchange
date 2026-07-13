@@ -60,12 +60,12 @@ let%expect_test "on_start seeds a symmetric two-sided ladder around fair \
   print_ladder submitted;
   [%expect
     {|
-    BUY AAPL 10@$149.48 DAY
-    BUY AAPL 10@$149.49 DAY
-    BUY AAPL 10@$149.50 DAY
-    SELL AAPL 10@$150.50 DAY
-    SELL AAPL 10@$150.51 DAY
-    SELL AAPL 10@$150.52 DAY
+    BUY 0 10@$149.48 DAY
+    BUY 0 10@$149.49 DAY
+    BUY 0 10@$149.50 DAY
+    SELL 0 10@$150.50 DAY
+    SELL 0 10@$150.51 DAY
+    SELL 0 10@$150.52 DAY
     |}];
   return ()
 ;;
@@ -91,15 +91,15 @@ let%expect_test "a fill re-quotes the whole book, skewed by new inventory" =
   [%expect
     {|
     bought 20 (cancelled 4 resting):
-    BUY AAPL 10@$149.09 DAY
-    BUY AAPL 10@$149.10 DAY
-    SELL AAPL 10@$150.10 DAY
-    SELL AAPL 10@$150.11 DAY
+    BUY 0 10@$149.09 DAY
+    BUY 0 10@$149.10 DAY
+    SELL 0 10@$150.10 DAY
+    SELL 0 10@$150.11 DAY
     sold 20 (cancelled 4 resting):
-    BUY AAPL 10@$149.89 DAY
-    BUY AAPL 10@$149.90 DAY
-    SELL AAPL 10@$150.90 DAY
-    SELL AAPL 10@$150.91 DAY
+    BUY 0 10@$149.89 DAY
+    BUY 0 10@$149.90 DAY
+    SELL 0 10@$150.90 DAY
+    SELL 0 10@$150.91 DAY
     |}];
   return ()
 ;;
@@ -126,11 +126,11 @@ let%expect_test "a cached BBO tightens the spread on the next re-quote" =
   [%expect
     {|
     seeded with no book (half-spread defaults to 50c):
-    BUY AAPL 10@$149.50 DAY
-    SELL AAPL 10@$150.50 DAY
+    BUY 0 10@$149.50 DAY
+    SELL 0 10@$150.50 DAY
     after caching a 20c-wide book, re-quote hugs it (half-spread 10c):
-    BUY AAPL 10@$149.90 DAY
-    SELL AAPL 10@$150.10 DAY
+    BUY 0 10@$149.90 DAY
+    SELL 0 10@$150.10 DAY
     |}];
   return ()
 ;;

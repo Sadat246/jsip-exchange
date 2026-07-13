@@ -38,7 +38,7 @@ module Config : sig
     }
   [@@deriving sexp_of]
 
-  type t = symbol_config Symbol.Map.t [@@deriving sexp_of]
+  type t = symbol_config Symbol_id.Map.t [@@deriving sexp_of]
 end
 
 (** Create an oracle. [seed] controls reproducibility; the same seed and
@@ -47,7 +47,7 @@ val create : Config.t -> seed:int -> t
 
 (** The current fundamental price for a symbol. Raises if the symbol is not
     in the config. *)
-val price : t -> Symbol.t -> Price.t
+val price : t -> Symbol_id.t -> Price.t
 
 (** Start the per-symbol tick loops. Returns a [Deferred.t] that never
     completes (each loop runs forever). Call this once after [create]. *)
@@ -56,10 +56,10 @@ val start : t -> unit Deferred.t
 (** Apply a one-time additive shock to a symbol's fundamental, in cents. Used
     by the news injector to model events like earnings surprises. Negative
     deltas are allowed but the price is clamped to a minimum of 1 cent. *)
-val inject_shock : t -> Symbol.t -> delta_cents:int -> unit
+val inject_shock : t -> Symbol_id.t -> delta_cents:int -> unit
 
 module For_testing : sig
   (** Advance a single symbol by one OU step without going through
       [Async.Clock]. *)
-  val advance_step : t -> Symbol.t -> unit
+  val advance_step : t -> Symbol_id.t -> unit
 end

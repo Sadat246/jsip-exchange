@@ -1,59 +1,35 @@
 open! Core
 
 module Map_int = struct
-  (* TODO: replace the definition of type t and the implementations of
-     create, set, and get *)
-  type t = unit
+  type t = int Int.Map.t ref
 
-  let create () = ()
-  let set t ~key ~data = ignore (t, key, data)
-
-  let get t key =
-    ignore (t, key);
-    None
-  ;;
+  let create () = ref Int.Map.empty
+  let set t ~key ~data = t := Map.set !t ~key ~data
+  let get t key = Map.find !t key
 end
 
 module Hashtable_int = struct
-  (* TODO: replace the definition of type t and the implementations of
-     create, set, and get *)
-  type t = unit
+  type t = int Int.Table.t
 
-  let create () = ()
-  let set t ~key ~data = ignore (t, key, data)
-
-  let get t key =
-    ignore (t, key);
-    None
-  ;;
+  let create () = Int.Table.create ()
+  let set t ~key ~data = Hashtbl.set t ~key ~data
+  let get t key = Hashtbl.find t key
 end
 
 module Map_string = struct
-  (* TODO: replace the definition of type t and the implementations of
-     create, set, and get *)
-  type t = unit
+  type t = int String.Map.t ref
 
-  let create () = ()
-  let set t ~key ~data = ignore (t, key, data)
-
-  let get t key =
-    ignore (t, key);
-    None
-  ;;
+  let create () = ref String.Map.empty
+  let set t ~key ~data = t := Map.set !t ~key ~data
+  let get t key = Map.find !t key
 end
 
 module Hashtable_string = struct
-  (* TODO: replace the definition of type t and the implementations of
-     create, set, and get *)
-  type t = unit
+  type t = int String.Table.t
 
-  let create () = ()
-  let set t ~key ~data = ignore (t, key, data)
-
-  let get t key =
-    ignore (t, key);
-    None
-  ;;
+  let create () = String.Table.create ()
+  let set t ~key ~data = Hashtbl.set t ~key ~data
+  let get t key = Hashtbl.find t key
 end
 
 module Fat_record = struct
@@ -87,29 +63,17 @@ module Fat_record = struct
 end
 
 module Map_record = struct
-  (* TODO: replace the definition of type t and the implementations of
-     create, set, and get *)
-  type t = unit
+  type t = int Fat_record.Map.t ref
 
-  let create () = ()
-  let set t ~key ~data = ignore (t, key, data)
-
-  let get t key =
-    ignore (t, key);
-    None
-  ;;
+  let create () = ref Fat_record.Map.empty
+  let set t ~key ~data = t := Map.set !t ~key ~data
+  let get t key = Map.find !t key
 end
 
 module Hashtable_record = struct
-  (* TODO: replace the definition of type t and the implementations of
-     create, set, and get *)
-  type t = unit
+  type t = int Fat_record.Table.t
 
-  let create () = ()
-  let set t ~key ~data = ignore (t, key, data)
-
-  let get t key =
-    ignore (t, key);
-    None
-  ;;
+  let create () = Fat_record.Table.create ()
+  let set t ~key ~data = Hashtbl.set t ~key ~data
+  let get t key = Hashtbl.find t key
 end

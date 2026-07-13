@@ -33,6 +33,7 @@ type t =
   ; tcp_server : (Socket.Address.Inet.t, int) Tcp.Server.t
   ; port : int
   ; logged_in_participants : Participant.Hash_set.t
+  ; participant_registry : Participant_registry.t
   ; collector : Stats_collector.t
   ; stopped : unit Ivar.t (* filled on [close] to stop the stats timer *)
   }
@@ -127,6 +128,13 @@ let start ~symbols ~port () =
          ; cancel_latency
          });
   let logged_in_participants = Participant.Hash_set.create () in
+  let participant_registry = Participant_registry.create () in
+  (* The name<->id directory served by [symbol_directory_rpc]. Ids match the
+     engine's assignment (id = position in [symbols]), and the symbol set is
+     fixed at startup, so we build it once. *)
+  let symbol_directory =
+    List.mapi symbols ~f:(fun id name -> name, Symbol_id.Private.of_int id)
+  in
   let implementations =
     Rpc.Implementations.create_exn
       ~implementations:
@@ -153,6 +161,11 @@ let start ~symbols ~port () =
                   in
                   conn_state.session <- Some session;
                   Hash_set.add logged_in_participants participant;
+                  let (_ : Participant_id.t) =
+                    Participant_registry.intern
+                      participant_registry
+                      participant
+                  in
                   Deferred.Or_error.return participant)))
         ; Rpc.Rpc.implement
             Rpc_protocol.submit_order_rpc
@@ -179,6 +192,9 @@ let start ~symbols ~port () =
             (fun _conn_state symbol ->
                Matching_engine.book engine symbol
                |> Option.map ~f:Order_book.snapshot)
+        ; Rpc.Rpc.implement'
+            Rpc_protocol.symbol_directory_rpc
+            (fun _conn_state () -> symbol_directory)
         ; Rpc.Pipe_rpc.implement
             Rpc_protocol.market_data_rpc
             (fun conn_state symbols ->
@@ -235,6 +251,7 @@ let start ~symbols ~port () =
   ; tcp_server
   ; port = actual_port
   ; logged_in_participants
+  ; participant_registry
   ; collector
   ; stopped
   }

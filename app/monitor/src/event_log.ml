@@ -92,7 +92,7 @@ type t =
   ; filter : Filter.t
   ; (* Ordered by first appearance — newest symbol last. Reorganising on
        every BBO would be visually noisy. *)
-    bbos_rev : (Symbol.t * Bbo.t) list
+    bbos_rev : (Symbol_id.t * Bbo.t) list
   }
 
 let create () = { events_rev = []; filter = Filter.all; bbos_rev = [] }
@@ -100,7 +100,7 @@ let create () = { events_rev = []; filter = Filter.all; bbos_rev = [] }
 let update_bbos bbos_rev symbol bbo =
   let found, updated =
     List.fold_map bbos_rev ~init:false ~f:(fun found (sym, current) ->
-      if Symbol.equal sym symbol
+      if Symbol_id.equal sym symbol
       then true, (sym, bbo)
       else found, (sym, current))
   in

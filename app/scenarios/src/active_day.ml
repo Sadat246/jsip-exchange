@@ -27,18 +27,25 @@ let symbol_table =
 
 let symbols = List.map symbol_table ~f:(fun (symbol, _, _) -> symbol)
 
+(* Symbol ids are assigned by position in [symbols] -- the list handed to the
+   engine via {!Scenario_config.symbols} -- so the [i]th symbol has id [i].
+   Orders, market-data subscriptions, and the oracle are all keyed by id. *)
+let symbol_ids =
+  List.mapi symbols ~f:(fun index _ -> Symbol_id.Private.of_int index)
+;;
+
 (* Moderate volatility on every symbol so all three books stay lively at once
    -- an "active" day is one where there is always something happening
    somewhere. *)
 let oracle_config : Fundamental_oracle.Config.t =
-  List.map symbol_table ~f:(fun (symbol, initial_price_cents, _) ->
-    ( symbol
+  List.mapi symbol_table ~f:(fun index (_symbol, initial_price_cents, _) ->
+    ( Symbol_id.Private.of_int index
     , { Fundamental_oracle.Config.initial_price_cents
       ; volatility_cents_per_sec = 4.0
       ; mean_reversion_strength = 0.05
       ; tick_interval = Time_ns.Span.of_sec 1.0
       } ))
-  |> Symbol.Map.of_alist_exn
+  |> Symbol_id.Map.of_alist_exn
 ;;
 
 (* A time-in-force distribution: [day_pct]% resting [Day] orders, the balance
@@ -55,12 +62,13 @@ let day_ioc_mix ~day_pct =
    them independent, and a self-trade-preventing engine means a maker never
    fills against itself -- the crossing flow comes from the noise trader. *)
 let market_maker_specs =
-  List.map symbol_table ~f:(fun (symbol, _, seed) ->
+  List.mapi symbol_table ~f:(fun index (symbol, _, seed) ->
+    let symbol_id = Symbol_id.Private.of_int index in
     Bot_spec.T
       { bot = (module Market_maker_bot)
       ; config =
           Market_maker_bot.Config.create
-            ~symbols:[ symbol ]
+            ~symbols:[ symbol_id ]
             ~size_per_level:10
             ~num_levels:5
             ~inventory_skew_cents_per_share:1
@@ -69,7 +77,7 @@ let market_maker_specs =
             ~max_spread_cents:500
       ; participant =
           Participant.of_string [%string "market-maker-%{symbol#Symbol}"]
-      ; symbols = [ symbol ]
+      ; symbols = [ symbol_id ]
       ; rng_seed = seed
       ; tick_interval = Time_ns.Span.of_sec 1.0
       ; is_marketdata_consumer = true
@@ -86,13 +94,13 @@ let noise_trader_spec =
     { bot = (module Noise_trader)
     ; config =
         Noise_trader.Config.create
-          ~symbols
+          ~symbols:symbol_ids
           ~mean_size:12
           ~tick_chance:(Percent.of_percentage 90.)
           ~aggressiveness:(Percent.of_percentage 55.)
           ~time_in_force_distribution:(day_ioc_mix ~day_pct:55.)
     ; participant = Participant.of_string "noise-trader"
-    ; symbols
+    ; symbols = symbol_ids
     ; rng_seed = 3001
     ; tick_interval = Time_ns.Span.of_ms 100.0
     ; is_marketdata_consumer = true

@@ -6,7 +6,7 @@
 open! Core
 
 type t =
-  { symbol : Symbol.t
+  { symbol : Symbol_id.t
   ; bids : Level.t list
   ; asks : Level.t list
   ; bbo : Bbo.t

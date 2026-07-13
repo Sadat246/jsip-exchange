@@ -11,7 +11,7 @@ open! Core
     order ID). This is what the gateway receives. *)
 module Request : sig
   type t =
-    { symbol : Symbol.t
+    { symbol : Symbol_id.t
     ; participant : Participant.t
     ; side : Side.t
     ; price : Price.t
@@ -41,7 +41,7 @@ val create : Request.t -> order_id:Order_id.t -> t
 
 val client_order_id : t -> Client_order_id.t
 val order_id : t -> Order_id.t
-val symbol : t -> Symbol.t
+val symbol : t -> Symbol_id.t
 val participant : t -> Participant.t
 val side : t -> Side.t
 val price : t -> Price.t

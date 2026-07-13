@@ -6,7 +6,7 @@ open Jsip_gateway
 module Config = struct
   type t =
     { participant : Participant.t
-    ; symbol : Symbol.t
+    ; symbol : Symbol_id.t
     ; fair_value_cents : int
     ; half_spread_cents : int
     ; size_per_level : int

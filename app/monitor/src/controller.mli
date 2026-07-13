@@ -38,7 +38,7 @@ module Display : sig
   type t =
     { title : string
     ; counter : string
-    ; bbo_panel : (Symbol.t * Bbo.t) list
+    ; bbo_panel : (Symbol_id.t * Bbo.t) list
     (** Snapshot of the latest BBO per symbol, in first-appearance order.
         Always visible in the chrome — independent of the event-list filters
         — so the user can keep an eye on the live market while drilling into

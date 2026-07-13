@@ -28,7 +28,7 @@ module Config : sig
         exceeds it, the maker stops quoting that symbol until the spread
         recovers. *)
   val create
-    :  symbols:Symbol.t list
+    :  symbols:Symbol_id.t list
     -> size_per_level:int
     -> num_levels:int
     -> inventory_skew_cents_per_share:int

@@ -12,7 +12,7 @@ module Key = struct
 end
 
 type t =
-  { symbol : Symbol.t
+  { symbol : Symbol_id.t
   ; mutable bids : Order.t Key.Map.t
   ; mutable asks : Order.t Key.Map.t
   ; reverse_index : (Side.t * Key.t) Order_id.Table.t
@@ -141,13 +141,26 @@ let best_bid_offer t : Bbo.t =
   { bid = best_level t Buy; ask = best_level t Sell }
 ;;
 
+(* let snapshot_side t (side : Side.t) = let compare = match side with | Buy
+   -> Comparable.reverse Level.compare | Sell -> Level.compare in
+   orders_on_side t side |> List.map ~f:Level.of_order |> List.sort ~compare
+   ;; *)
 let snapshot_side t (side : Side.t) =
   let compare =
     match side with
     | Buy -> Comparable.reverse Level.compare
     | Sell -> Level.compare
   in
-  orders_on_side t side |> List.map ~f:Level.of_order |> List.sort ~compare
+  orders_on_side t side
+  |> List.fold
+       ~init:([] : Level.t list)
+       ~f:(fun acc order ->
+         match acc with
+         | level :: rest when Price.equal level.price (Order.price order) ->
+           { level with size = Size.( + ) level.size (Order.size order) }
+           :: rest
+         | acc -> Level.of_order order :: acc)
+  |> List.sort ~compare
 ;;
 
 let snapshot t =

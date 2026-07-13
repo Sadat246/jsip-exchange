@@ -33,12 +33,12 @@ let%expect_test "book_filler floods non-marketable resting Day orders" =
   print_orders submitted;
   [%expect
     {|
-    cid=0 BUY AAPL 1@$145.00 DAY
-    cid=1 SELL AAPL 1@$155.00 DAY
-    cid=2 BUY AAPL 1@$144.90 DAY
-    cid=3 SELL AAPL 1@$155.10 DAY
-    cid=4 BUY AAPL 1@$144.80 DAY
-    cid=5 SELL AAPL 1@$155.20 DAY
+    cid=0 BUY 0 1@$145.00 DAY
+    cid=1 SELL 0 1@$155.00 DAY
+    cid=2 BUY 0 1@$144.90 DAY
+    cid=3 SELL 0 1@$155.10 DAY
+    cid=4 BUY 0 1@$144.80 DAY
+    cid=5 SELL 0 1@$155.20 DAY
     |}];
   return ()
 ;;
@@ -66,12 +66,12 @@ let%expect_test "book_filler advances client_order_id across ticks" =
   print_orders submitted;
   [%expect
     {|
-    cid=0 BUY AAPL 1@$145.00 DAY
-    cid=1 SELL AAPL 1@$155.00 DAY
-    cid=2 BUY AAPL 1@$144.90 DAY
-    cid=3 BUY AAPL 1@$145.00 DAY
-    cid=4 SELL AAPL 1@$155.00 DAY
-    cid=5 BUY AAPL 1@$144.90 DAY
+    cid=0 BUY 0 1@$145.00 DAY
+    cid=1 SELL 0 1@$155.00 DAY
+    cid=2 BUY 0 1@$144.90 DAY
+    cid=3 BUY 0 1@$145.00 DAY
+    cid=4 SELL 0 1@$155.00 DAY
+    cid=5 BUY 0 1@$144.90 DAY
     |}];
   return ()
 ;;
@@ -99,12 +99,12 @@ let%expect_test "book_filler with zero level spacing stacks one level per \
   print_orders submitted;
   [%expect
     {|
-    cid=0 BUY AAPL 1@$145.00 DAY
-    cid=1 SELL AAPL 1@$155.00 DAY
-    cid=2 BUY AAPL 1@$145.00 DAY
-    cid=3 SELL AAPL 1@$155.00 DAY
-    cid=4 BUY AAPL 1@$145.00 DAY
-    cid=5 SELL AAPL 1@$155.00 DAY
+    cid=0 BUY 0 1@$145.00 DAY
+    cid=1 SELL 0 1@$155.00 DAY
+    cid=2 BUY 0 1@$145.00 DAY
+    cid=3 SELL 0 1@$155.00 DAY
+    cid=4 BUY 0 1@$145.00 DAY
+    cid=5 SELL 0 1@$155.00 DAY
     |}];
   return ()
 ;;
@@ -135,10 +135,10 @@ let%expect_test "book_filler floors buy prices at one cent" =
   print_orders submitted;
   [%expect
     {|
-    cid=0 BUY AAPL 1@$0.01 DAY
-    cid=1 SELL AAPL 1@$8.00 DAY
-    cid=2 BUY AAPL 1@$0.01 DAY
-    cid=3 SELL AAPL 1@$9.00 DAY
+    cid=0 BUY 0 1@$0.01 DAY
+    cid=1 SELL 0 1@$8.00 DAY
+    cid=2 BUY 0 1@$0.01 DAY
+    cid=3 SELL 0 1@$9.00 DAY
     |}];
   return ()
 ;;
@@ -172,10 +172,10 @@ let%expect_test "book_filler round-robins orders across symbols" =
   print_orders submitted;
   [%expect
     {|
-    cid=0 BUY AAPL 1@$145.00 DAY
-    cid=1 SELL MSFT 1@$205.00 DAY
-    cid=2 BUY AAPL 1@$144.90 DAY
-    cid=3 SELL MSFT 1@$205.10 DAY
+    cid=0 BUY 0 1@$145.00 DAY
+    cid=1 SELL 1 1@$205.00 DAY
+    cid=2 BUY 0 1@$144.90 DAY
+    cid=3 SELL 1 1@$205.10 DAY
     |}];
   return ()
 ;;
@@ -208,8 +208,8 @@ let%expect_test "book_filler has order_size greater than 1" =
   print_orders submitted;
   [%expect
     {|
-    cid=0 BUY AAPL 10@$295.00 DAY
-    cid=1 SELL AAPL 10@$305.00 DAY
+    cid=0 BUY 0 10@$295.00 DAY
+    cid=1 SELL 0 10@$305.00 DAY
     |}];
   return ()
 ;;

@@ -2,7 +2,7 @@ open! Core
 open Jsip_types
 
 type t =
-  { books : Order_book.t Symbol.Map.t
+  { books : Order_book.t array
   ; order_id_gen : Order_id.Generator.t
   ; mutable next_fill_id : int
   ; (* Tracks every [Client_order_id.t] that has ever been accepted from each
@@ -16,8 +16,13 @@ type t =
 
 let create symbols =
   let books =
-    List.map symbols ~f:(fun sym -> sym, Order_book.create sym)
-    |> Symbol.Map.of_alist_exn
+    (* Each configured symbol gets the id equal to its position, and the
+       books array is indexed by that id. The names aren't kept — the wire
+       now carries [Symbol_id.t], and recovering names from ids is the server
+       registry's job, not the engine's. *)
+    List.mapi symbols ~f:(fun id (_sym : Symbol.t) ->
+      Order_book.create (Symbol_id.Private.of_int id))
+    |> Array.of_list
   in
   { books
   ; order_id_gen = Order_id.Generator.create ()
@@ -69,7 +74,15 @@ let try_reserve_client_order_id t ~participant ~client_order_id ~order =
   Hashtbl.add inner ~key:client_order_id ~data:order
 ;;
 
-let book t symbol = Map.find t.books symbol
+(* Resolve a client-supplied [Symbol_id.t] to its book. The id is an
+   untrusted array index straight off the wire, so bounds-check it: an
+   out-of-range id (malformed, or a symbol this engine doesn't trade) yields
+   [None], which callers turn into an "unknown symbol" rejection instead of a
+   crash. *)
+let book t symbol_id =
+  let i = (symbol_id : Symbol_id.t :> int) in
+  if i >= 0 && i < Array.length t.books then Some t.books.(i) else None
+;;
 
 (** Run the matching loop: repeatedly find a compatible resting order and
     fill against it. Returns the list of Fill and Trade_report events
@@ -125,7 +138,7 @@ let submit t ~participant (request : Order.Request.t) =
      client put in the request with the one established at login, so a client
      cannot submit under someone else's name. *)
   let request = { request with participant } in
-  match Map.find t.books request.symbol with
+  match book t request.symbol with
   | None -> reject ~participant ~request ~reason:"unknown symbol"
   | Some book ->
     let order_id = Order_id.Generator.next t.order_id_gen in
@@ -194,7 +207,8 @@ let cancel t ~participant ~client_order_id =
   | Some order ->
     let symbol = Order.symbol order in
     let order_id = Order.order_id order in
-    let book = Map.find_exn t.books symbol in
+    (* [symbol] came from an already-accepted order, so its id is in range. *)
+    let book = t.books.((symbol : Symbol_id.t :> int)) in
     (match Order_book.find book order_id with
      | None ->
        (* The order was submitted under this [(participant, client_order_id)]

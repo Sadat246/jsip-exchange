@@ -19,7 +19,7 @@ type symbol_info =
 
 module Config = struct
   type t =
-    { symbols : Symbol.t list
+    { symbols : Symbol_id.t list
     ; size_per_level : int
     ; num_levels : int
     ; inventory_skew_cents_per_share : int
@@ -30,7 +30,7 @@ module Config = struct
         (* Reseed tolerance: if the observed market spread is wider than
            this, we assume a whale swept the book and stand aside instead of
            quoting into the gap -- the liquidity will fill back in. *)
-    ; symbol_state : symbol_info Symbol.Table.t
+    ; symbol_state : symbol_info Symbol_id.Table.t
     ; generator : Client_order_id.Generator.t
     }
 
@@ -50,7 +50,7 @@ module Config = struct
     ; initial_half_spread_cents = half_spread_cents
     ; min_half_spread_cents
     ; max_spread_cents
-    ; symbol_state = Symbol.Table.create ()
+    ; symbol_state = Symbol_id.Table.create ()
     ; generator = Client_order_id.Generator.create ()
     }
   ;;

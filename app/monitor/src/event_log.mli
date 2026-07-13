@@ -85,7 +85,7 @@ val event_count : t -> int
     insertion order of first appearance: a symbol's slot is added the first
     time it produces a BBO and never reordered, even when later BBOs update
     its value. *)
-val current_bbos : t -> (Symbol.t * Bbo.t) list
+val current_bbos : t -> (Symbol_id.t * Bbo.t) list
 
 (** Replace the active filter. *)
 val set_filter : t -> Filter.t -> t

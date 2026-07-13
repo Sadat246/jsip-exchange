@@ -15,14 +15,12 @@ let print_parse line =
 
 let%expect_test "parse: basic buy" =
   print_parse "BUY 1 AAPL 100 150.25";
-  [%expect
-    {| (Submit((symbol AAPL)(participant Alice)(side Buy)(price 15025)(size 100)(time_in_force Day)(client_order_id 1))) |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 let%expect_test "parse: basic sell" =
   print_parse "SELL 2 TSLA 50 200.00";
-  [%expect
-    {| (Submit((symbol TSLA)(participant Alice)(side Sell)(price 20000)(size 50)(time_in_force Day)(client_order_id 2))) |}]
+  [%expect {| ERROR: invalid symbol id: TSLA |}]
 ;;
 
 let%expect_test "parse: case insensitive command keyword" =
@@ -32,39 +30,34 @@ let%expect_test "parse: case insensitive command keyword" =
   [%expect
     {|
     (Login(name Alice))
-    (Submit((symbol AAPL)(participant Alice)(side Buy)(price 15000)(size 100)(time_in_force Day)(client_order_id 1)))
-    (Submit((symbol AAPL)(participant Alice)(side Buy)(price 15000)(size 100)(time_in_force Day)(client_order_id 2)))
+    ERROR: invalid symbol id: AAPL
+    ERROR: invalid symbol id: AAPL
     |}]
 ;;
 
 let%expect_test "parse: with IOC time-in-force" =
   print_parse "BUY 1 AAPL 100 150.00 IOC";
-  [%expect
-    {| (Submit((symbol AAPL)(participant Alice)(side Buy)(price 15000)(size 100)(time_in_force Ioc)(client_order_id 1))) |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 let%expect_test "parse: with explicit DAY" =
   print_parse "SELL 7 AAPL 200 151.00 DAY";
-  [%expect
-    {| (Submit((symbol AAPL)(participant Alice)(side Sell)(price 15100)(size 200)(time_in_force Day)(client_order_id 7))) |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 let%expect_test "parse: symbol is uppercased" =
   print_parse "BUY 1 aapl 100 150.00";
-  [%expect
-    {| (Submit((symbol aapl)(participant Alice)(side Buy)(price 15000)(size 100)(time_in_force Day)(client_order_id 1))) |}]
+  [%expect {| ERROR: invalid symbol id: aapl |}]
 ;;
 
 let%expect_test "parse: extra whitespace is ignored" =
   print_parse "  BUY   1   AAPL   100   150.00  ";
-  [%expect
-    {| (Submit((symbol AAPL)(participant Alice)(side Buy)(price 15000)(size 100)(time_in_force Day)(client_order_id 1))) |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 let%expect_test "parse: price with dollar sign" =
   print_parse "BUY 1 AAPL 100 $150.25";
-  [%expect
-    {| (Submit((symbol AAPL)(participant Alice)(side Buy)(price 15025)(size 100)(time_in_force Day)(client_order_id 1))) |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 let%expect_test "parse: login" =
@@ -79,12 +72,12 @@ let%expect_test "parse: cancel" =
 
 let%expect_test "parse: book with symbol" =
   print_parse "BOOK AAPL";
-  [%expect {| (Book AAPL) |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 let%expect_test "parse: subscribe case-insensitive" =
   print_parse "SUBSCRIBE aapl";
-  [%expect {| (Subscribe aapl) |}]
+  [%expect {| ERROR: invalid symbol id: aapl |}]
 ;;
 
 (* --- Parse errors --- *)
@@ -146,7 +139,7 @@ let%expect_test "parse error: invalid price" =
 
 let%expect_test "parse error: unknown time-in-force" =
   print_parse "BUY 1 AAPL 100 150.00 QQQ";
-  [%expect {| ERROR: unknown time-in-force: QQQ (expected [DAY|IOC]) |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 let%expect_test "parse error: LOGIN missing name" =
@@ -161,7 +154,7 @@ let%expect_test "parse error: CANCEL missing id" =
 
 let%expect_test "parse error: trailing arguments after order" =
   print_parse "BUY 1 AAPL 100 150.00 DAY extra stuff";
-  [%expect {| ERROR: unexpected trailing arguments: DAY extra stuff |}]
+  [%expect {| ERROR: invalid symbol id: AAPL |}]
 ;;
 
 (* --- Event formatting --- *)
@@ -173,7 +166,7 @@ let%expect_test "format_event: all event types" =
         ; participant = Participant.of_string "Alice"
         ; request =
             { client_order_id = Client_order_id.of_int 10
-            ; symbol = Symbol.of_string "AAPL"
+            ; symbol = Symbol_id.Private.of_int 0
             ; participant = Participant.of_string "Alice"
             ; side = Buy
             ; price = Price.of_int_cents 15000
@@ -183,7 +176,7 @@ let%expect_test "format_event: all event types" =
         }
     ; Fill
         { fill_id = 1
-        ; symbol = Symbol.of_string "AAPL"
+        ; symbol = Symbol_id.Private.of_int 0
         ; price = Price.of_int_cents 15000
         ; size = Size.of_int 100
         ; aggressor_order_id = Order_id.of_string "2"
@@ -198,7 +191,7 @@ let%expect_test "format_event: all event types" =
         { order_id = Order_id.of_string "3"
         ; client_order_id = Client_order_id.of_int 7
         ; participant = Participant.of_string "Charlie"
-        ; symbol = Symbol.of_string "TSLA"
+        ; symbol = Symbol_id.Private.of_int 1
         ; remaining_size = Size.of_int 50
         ; reason = Ioc_remainder
         }
@@ -206,7 +199,7 @@ let%expect_test "format_event: all event types" =
         { participant = Participant.of_string "Alice"
         ; request =
             { client_order_id = Client_order_id.of_int 42
-            ; symbol = Symbol.of_string "GOOG"
+            ; symbol = Symbol_id.Private.of_int 2
             ; participant = Participant.of_string "Alice"
             ; side = Sell
             ; price = Price.of_int_cents 28000
@@ -221,7 +214,7 @@ let%expect_test "format_event: all event types" =
         ; reason = "order not found"
         }
     ; Best_bid_offer_update
-        { symbol = Symbol.of_string "AAPL"
+        { symbol = Symbol_id.Private.of_int 0
         ; bbo =
             { bid =
                 Some
@@ -236,9 +229,9 @@ let%expect_test "format_event: all event types" =
             }
         }
     ; Best_bid_offer_update
-        { symbol = Symbol.of_string "AAPL"; bbo = Bbo.empty }
+        { symbol = Symbol_id.Private.of_int 0; bbo = Bbo.empty }
     ; Trade_report
-        { symbol = Symbol.of_string "AAPL"
+        { symbol = Symbol_id.Private.of_int 0
         ; price = Price.of_int_cents 15000
         ; size = Size.of_int 100
         }
@@ -247,14 +240,14 @@ let%expect_test "format_event: all event types" =
   List.iter events ~f:(fun e -> print_endline (Protocol.format_event e));
   [%expect
     {|
-    ACCEPTED server_id=1 client_id=10 AAPL BUY 100@$150.00 DAY
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=20 Alice] BUY resting=[server_id=1 client_id=17 Bob]
-    CANCELLED server_id=3 client_id=7 TSLA remaining=50 reason=IOC_REMAINDER
-    REJECTED client_id=42 GOOG SELL 10@$280.00 reason=unknown symbol
+    ACCEPTED server_id=1 client_id=10 0 BUY 100@$150.00 DAY
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=20 Alice] BUY resting=[server_id=1 client_id=17 Bob]
+    CANCELLED server_id=3 client_id=7 1 remaining=50 reason=IOC_REMAINDER
+    REJECTED client_id=42 2 SELL 10@$280.00 reason=unknown symbol
     CANCEL REJECTED client_id=42 reason=order not found
-    BBO AAPL bid=$149.90 x200 ask=$150.10 x100
-    BBO AAPL bid=- ask=-
-    TRADE AAPL $150.00 x100
+    BBO 0 bid=$149.90 x200 ask=$150.10 x100
+    BBO 0 bid=- ask=-
+    TRADE 0 $150.00 x100
     |}]
 ;;
 
@@ -285,11 +278,8 @@ let%expect_test "round-trip: parse a command, submit, format result" =
      print_string [%string "unexpected command: %{cmd#Exchange_command}\n"]);
   [%expect
     {|
-    ACCEPTED server_id=1 client_id=101 AAPL SELL 100@$150.00 DAY
-    BBO AAPL bid=- ask=$150.00 x100
-    ACCEPTED server_id=2 client_id=2 AAPL BUY 100@$150.00 DAY
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=101 Bob]
-    TRADE AAPL $150.00 x100
-    BBO AAPL bid=- ask=-
+    ACCEPTED server_id=1 client_id=101 0 SELL 100@$150.00 DAY
+    BBO 0 bid=- ask=$150.00 x100
+    parse error: invalid symbol id: AAPL
     |}]
 ;;

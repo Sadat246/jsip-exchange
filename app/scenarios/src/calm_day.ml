@@ -11,7 +11,11 @@ let description =
   "Quiet single-symbol market: one market maker, one noise trader, no news."
 ;;
 
-let symbol = Symbol.of_string "AAPL"
+(* The engine assigns ids by position, so AAPL (the only symbol) is id 0.
+   [symbol] is the id used for orders and the oracle; [symbol_name] is the
+   name handed to the engine via {!Scenario_config.symbols}. *)
+let symbol = Symbol_id.Private.of_int 0
+let symbol_name = Symbol.of_string "AAPL"
 let initial_price_cents = 15000
 
 (* Modest volatility and gentle mean reversion: the fundamental drifts
@@ -19,7 +23,7 @@ let initial_price_cents = 15000
    news shocks in this scenario, so this OU noise is the *only* thing moving
    fair value -- keeping it small is what makes the day "calm". *)
 let oracle_config : Fundamental_oracle.Config.t =
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     [ ( symbol
       , { Fundamental_oracle.Config.initial_price_cents
         ; volatility_cents_per_sec = 3.0
@@ -86,7 +90,7 @@ let noise_trader_spec =
 
 let configure () : Scenario_config.t =
   { name
-  ; symbols = [ symbol ]
+  ; symbols = [ symbol_name ]
   ; oracle_config
   ; news = []
   ; bots = [ market_maker_spec; noise_trader_spec ]

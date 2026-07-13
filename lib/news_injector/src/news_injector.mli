@@ -13,7 +13,7 @@ open Jsip_types
 module Event : sig
   type t =
     { at : Time_ns.Span.t (** Offset from [start] when the shock fires. *)
-    ; symbol : Symbol.t
+    ; symbol : Symbol_id.t
     ; delta_cents : int
     ; description : string
     }

@@ -5,14 +5,14 @@ open Jsip_dashboard_protocol
 
 type t =
   { market_data_subscribers_by_symbol :
-      Exchange_event.t Pipe.Writer.t Bag.t Symbol.Table.t
+      Exchange_event.t Pipe.Writer.t Bag.t Symbol_id.Table.t
   ; audit_subscribers : Exchange_event.t Pipe.Writer.t Bag.t
   ; stats_subscribers : Exchange_stats.t Pipe.Writer.t Bag.t
   ; sessions : Session.t Participant.Table.t
   }
 
 let create () =
-  { market_data_subscribers_by_symbol = Symbol.Table.create ()
+  { market_data_subscribers_by_symbol = Symbol_id.Table.create ()
   ; audit_subscribers = Bag.create ()
   ; stats_subscribers = Bag.create ()
   ; sessions = Participant.Table.create ()

@@ -14,7 +14,11 @@ let description =
    market maker quoting and a noise trader adding organic activity."
 ;;
 
-let symbol = Symbol.of_string "AAPL"
+(* AAPL is the only symbol, so the engine assigns it id 0. [symbol] is the id
+   used for orders, the oracle, and news; [symbol_name] is the name handed to
+   the engine via {!Scenario_config.symbols}. *)
+let symbol = Symbol_id.Private.of_int 0
+let symbol_name = Symbol.of_string "AAPL"
 let initial_price_cents = 15000
 
 (* Low intrinsic volatility and gentle mean reversion, so the fundamental
@@ -23,7 +27,7 @@ let initial_price_cents = 15000
    that keeps the momentum trader's signal driven by the trend we scripted
    rather than by random wiggles. *)
 let oracle_config : Fundamental_oracle.Config.t =
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     [ ( symbol
       , { Fundamental_oracle.Config.initial_price_cents
         ; volatility_cents_per_sec = 1.0
@@ -147,7 +151,7 @@ let noise_trader_spec =
 
 let configure () : Scenario_config.t =
   { name
-  ; symbols = [ symbol ]
+  ; symbols = [ symbol_name ]
   ; oracle_config
   ; news = trend_news
   ; bots = [ momentum_trader_spec; market_maker_spec; noise_trader_spec ]

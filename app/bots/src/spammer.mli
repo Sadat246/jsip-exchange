@@ -50,7 +50,7 @@ module Config : sig
       so tests can observe how a run progresses. Build one with
       {!pump_and_dump_params}, which seeds the state. *)
   type pump_and_dump_params =
-    { target_symbol : Symbol.t
+    { target_symbol : Symbol_id.t
     ; pump_target_pct : Percent.t
     ; clip_size : int
     ; max_inventory : int
@@ -70,7 +70,7 @@ module Config : sig
       no anchor). See the field comments in {!Spammer} for what each knob
       controls. *)
   val pump_and_dump_params
-    :  target_symbol:Symbol.t
+    :  target_symbol:Symbol_id.t
     -> pump_target_pct:Percent.t
     -> clip_size:int
     -> max_inventory:int
@@ -87,7 +87,7 @@ module Config : sig
 
   type t
 
-  val create : symbols:Symbol.t list -> behavior:behavior -> t
+  val create : symbols:Symbol_id.t list -> behavior:behavior -> t
 end
 
 include Jsip_bot_runtime.Bot_runtime.Bot with module Config := Config

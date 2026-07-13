@@ -115,12 +115,12 @@ let bbo_value_attr = Attr.fg Attr.Color.Expert.lightcyan
 let render_bbo_row (symbol, bbo) =
   let bbo_str = Bbo.to_string bbo in
   View.hcat
-    [ View.text ~attrs:[ title_attr ] [%string "%{symbol#Symbol}: "]
+    [ View.text ~attrs:[ title_attr ] [%string "%{symbol#Symbol_id}: "]
     ; View.text ~attrs:[ bbo_value_attr ] bbo_str
     ]
 ;;
 
-let render_bbo_panel (bbos : (Symbol.t * Bbo.t) list) =
+let render_bbo_panel (bbos : (Symbol_id.t * Bbo.t) list) =
   let label =
     View.text ~attrs:[ dim_grey ] (String.pad_right "BBO:" ~len:12)
   in

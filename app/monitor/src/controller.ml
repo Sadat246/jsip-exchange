@@ -27,7 +27,7 @@ module Display = struct
   type t =
     { title : string
     ; counter : string
-    ; bbo_panel : (Symbol.t * Bbo.t) list
+    ; bbo_panel : (Symbol_id.t * Bbo.t) list
     ; category_chips : Chip.t list
     ; substring_field : substring_field
     ; visible_events : (Event_log.Color.t * string) list

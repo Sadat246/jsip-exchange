@@ -10,16 +10,20 @@ let description =
    trader."
 ;;
 
-(* A single liquid symbol at $150.00 keeps the pathology easy to watch. *)
-let aapl = Symbol.of_string "AAPL"
+(* A single liquid symbol at $150.00 keeps the pathology easy to watch. AAPL
+   is the only symbol, so the engine assigns it id 0. [symbols] holds the ids
+   used for orders and market data; [symbol_names] holds the names handed to
+   the engine via {!Scenario_config.symbols}. *)
+let aapl = Symbol_id.Private.of_int 0
 let symbols = [ aapl ]
+let symbol_names = [ Symbol.of_string "AAPL" ]
 
 (* The market maker quotes with this half-spread when it has no BBO (its
    default), so the storm's marketable orders must reach past it to cross. *)
 let market_maker_half_spread_cents = 50
 
 let oracle_config : Jsip_fundamental.Fundamental_oracle.Config.t =
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     [ ( aapl
       , { Jsip_fundamental.Fundamental_oracle.Config.initial_price_cents =
             15000
@@ -94,7 +98,7 @@ let num_storms = 3
 
 let configure () : Scenario_config.t =
   { name
-  ; symbols
+  ; symbols = symbol_names
   ; oracle_config
   ; news = []
   ; bots =

@@ -58,14 +58,14 @@ let%expect_test "partial close, mark-to-market, and the counterparty mirror" =
   print_summary pnl alice;
   [%expect
     {|
-      AAPL inv=60 avg=$150.00 ref=$153.00 realized=$200.00 unrealized=$180.00
-      TOTAL realized=$200.00 unrealized=$180.00
+    0 inv=60 avg=$150.00 ref=$153.00 realized=$200.00 unrealized=$180.00
+    TOTAL realized=$200.00 unrealized=$180.00
     |}];
   print_summary pnl bob;
   [%expect
     {|
-      AAPL inv=-60 avg=$150.00 ref=$153.00 realized=-$200.00 unrealized=-$180.00
-      TOTAL realized=-$200.00 unrealized=-$180.00
+    0 inv=-60 avg=$150.00 ref=$153.00 realized=-$200.00 unrealized=-$180.00
+    TOTAL realized=-$200.00 unrealized=-$180.00
     |}]
 ;;
 
@@ -103,8 +103,8 @@ let%expect_test "position flip realizes the closed leg and reopens at the \
   print_summary pnl alice;
   [%expect
     {|
-      AAPL inv=-30 avg=$110.00 ref=$108.00 realized=$500.00 unrealized=$60.00
-      TOTAL realized=$500.00 unrealized=$60.00
+    0 inv=-30 avg=$110.00 ref=$108.00 realized=$500.00 unrealized=$60.00
+    TOTAL realized=$500.00 unrealized=$60.00
     |}]
 ;;
 
@@ -124,7 +124,7 @@ let%expect_test "unrealized is zero until a trade print sets the reference" =
   print_summary pnl alice;
   [%expect
     {|
-      AAPL inv=10 avg=$200.00 ref=-- realized=$0.00 unrealized=$0.00
-      TOTAL realized=$0.00 unrealized=$0.00
+    0 inv=10 avg=$200.00 ref=-- realized=$0.00 unrealized=$0.00
+    TOTAL realized=$0.00 unrealized=$0.00
     |}]
 ;;

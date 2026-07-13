@@ -9,8 +9,8 @@ open Jsip_types
 open Jsip_fundamental
 open Jsip_bot_runtime
 
-let aapl = Symbol.of_string "AAPL"
-let msft = Symbol.of_string "MSFT"
+let aapl = Symbol_id.Private.of_int 0
+let msft = Symbol_id.Private.of_int 1
 let alice = Participant.of_string "Alice"
 
 (* A zero-volatility, zero-mean-reversion oracle so [Context.fundamental]
@@ -28,7 +28,7 @@ let oracle_config ~initial_price_cents ~extra_symbol_prices =
       ; tick_interval = Time_ns.Span.of_sec 1.0
       } )
   in
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     (List.map ((aapl, initial_price_cents) :: extra_symbol_prices) ~f:entry)
 ;;
 
@@ -95,7 +95,7 @@ let feed_events bot events =
 let print_requests (requests : Order.Request.t list) =
   List.iter requests ~f:(fun req ->
     printf
-      !"%{Side} %{Symbol} %d@%{Price#dollar} %{Time_in_force}\n"
+      !"%{Side} %{Symbol_id} %d@%{Price#dollar} %{Time_in_force}\n"
       req.side
       req.symbol
       (Size.to_int req.size)
@@ -130,7 +130,7 @@ let print_ladder (submitted : Order.Request.t list ref) =
 let print_orders (submitted : Order.Request.t list ref) =
   List.iter (List.rev !submitted) ~f:(fun (req : Order.Request.t) ->
     printf
-      !"cid=%{Client_order_id} %{Side} %{Symbol} %d@%{Price#dollar} \
+      !"cid=%{Client_order_id} %{Side} %{Symbol_id} %d@%{Price#dollar} \
         %{Time_in_force}\n"
       req.client_order_id
       req.side

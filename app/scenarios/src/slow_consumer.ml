@@ -14,13 +14,17 @@ let description =
    pathology."
 ;;
 
-let aapl = Symbol.of_string "AAPL"
+(* AAPL is the only symbol, so the engine assigns it id 0. [aapl] is the id
+   used for orders and the oracle; [aapl_name] is the name handed to the
+   engine via {!Scenario_config.symbols}. *)
+let aapl = Symbol_id.Private.of_int 0
+let aapl_name = Symbol.of_string "AAPL"
 
 (* A gently drifting fundamental so the market maker's quotes keep moving,
    which keeps market-data events flowing for the slow consumers to fall
    behind on. Deterministic given the runner's seed. *)
 let oracle_config : Fundamental_oracle.Config.t =
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     [ ( aapl
       , { Fundamental_oracle.Config.initial_price_cents = 15000
         ; volatility_cents_per_sec = 10.0
@@ -92,7 +96,7 @@ let configure () : Scenario_config.t =
         ~read_delay)
   in
   { name
-  ; symbols = [ aapl ]
+  ; symbols = [ aapl_name ]
   ; oracle_config
   ; news = []
   ; bots = market_makers @ slow_consumers

@@ -12,7 +12,7 @@ open! Jsip_bots
 open Bot_harness
 
 let bob = Participant.of_string "Bob"
-let goog = Symbol.of_string "GOOG"
+let goog = Symbol_id.Private.of_int 2
 
 let momentum_config ?cooldown_ticks ?(max_order_size = 100) ?max_position () =
   Momentum_trader_hansel.Config.create_exn
@@ -76,7 +76,7 @@ let%expect_test "momentum: rising prices trigger a buy" =
   let%bind () = feed_trades bot [ 15000; 15004; 15010 ] in
   let%bind () = drive_ticks bot ~ticks:1 in
   print_submitted submitted;
-  [%expect {| BUY AAPL 10@$150.11 IOC |}];
+  [%expect {| BUY 0 10@$150.11 IOC |}];
   return ()
 ;;
 
@@ -88,7 +88,7 @@ let%expect_test "momentum: falling prices trigger a sell" =
   let%bind () = feed_trades bot [ 15010; 15004; 15000 ] in
   let%bind () = drive_ticks bot ~ticks:1 in
   print_submitted submitted;
-  [%expect {| SELL AAPL 10@$149.99 IOC |}];
+  [%expect {| SELL 0 10@$149.99 IOC |}];
   return ()
 ;;
 
@@ -116,7 +116,7 @@ let%expect_test "momentum: the signal decays as the ring rolls over" =
   let%bind () = feed_trades bot [ 15010; 15010 ] in
   let%bind () = drive_ticks bot ~ticks:1 in
   print_submitted submitted;
-  [%expect {| BUY AAPL 10@$150.11 IOC |}];
+  [%expect {| BUY 0 10@$150.11 IOC |}];
   return ()
 ;;
 
@@ -128,7 +128,7 @@ let%expect_test "momentum: order size is capped by max_order_size" =
   let%bind () = feed_trades bot [ 15000; 15010; 15050 ] in
   let%bind () = drive_ticks bot ~ticks:1 in
   print_submitted submitted;
-  [%expect {| BUY AAPL 5@$150.51 IOC |}];
+  [%expect {| BUY 0 5@$150.51 IOC |}];
   return ()
 ;;
 
@@ -154,7 +154,7 @@ let%expect_test "momentum: the position limit clamps and then blocks" =
   in
   let%bind () = drive_ticks bot ~ticks:1 in
   print_submitted submitted;
-  [%expect {| BUY AAPL 2@$150.11 IOC |}];
+  [%expect {| BUY 0 2@$150.11 IOC |}];
   return ()
 ;;
 
@@ -173,7 +173,7 @@ let%expect_test "momentum: a fill where we rested also updates position" =
   let%bind () = feed_trades bot [ 15010; 15004; 15000 ] in
   let%bind () = drive_ticks bot ~ticks:1 in
   print_submitted submitted;
-  [%expect {| SELL AAPL 2@$149.99 IOC |}];
+  [%expect {| SELL 0 2@$149.99 IOC |}];
   return ()
 ;;
 
@@ -188,8 +188,8 @@ let%expect_test "momentum: the cooldown skips ticks after an entry" =
   let%bind () = drive_ticks bot ~ticks:4 in
   print_submitted submitted;
   [%expect {|
-    BUY AAPL 10@$150.11 IOC
-    BUY AAPL 10@$150.11 IOC
+    BUY 0 10@$150.11 IOC
+    BUY 0 10@$150.11 IOC
     |}];
   return ()
 ;;
@@ -212,6 +212,6 @@ let%expect_test "momentum: trades in other symbols never enter the window" =
   let%bind () = feed_trades bot [ 15010 ] in
   let%bind () = drive_ticks bot ~ticks:1 in
   print_submitted submitted;
-  [%expect {| BUY AAPL 10@$150.11 IOC |}];
+  [%expect {| BUY 0 10@$150.11 IOC |}];
   return ()
 ;;

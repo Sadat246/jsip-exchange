@@ -33,12 +33,22 @@ type t =
   | Login of { name : string }
   | Submit of Order.Request.t
   | Cancel of { client_order_id : Client_order_id.t }
-  | Book of Symbol.t
-  | Subscribe of Symbol.t
+  | Book of Symbol_id.t
+  | Subscribe of Symbol_id.t
 [@@deriving to_string]
 
 (** Parse a text command. [participant] is the caller's logged-in identity;
     it is stamped onto the [Order.Request.t] of a [Submit] (the server still
-    re-checks it against the session, so it cannot be spoofed). Returns
-    [Error] with a human-readable message if the input is malformed. *)
-val parse : participant:Participant.t -> string -> t Or_error.t
+    re-checks it against the session, so it cannot be spoofed).
+
+    [symbol_of_string] turns the symbol token into a {!Jsip_types.Symbol_id}.
+    It defaults to reading the token as the integer id (["BOOK 0"]); a client
+    that has fetched the symbol directory passes one backed by its name->id map
+    so the user can type a name (["BOOK AAPL"]), which is why the examples
+    above use names. Returns [Error] with a human-readable message if the input
+    is malformed (including an unknown symbol name). *)
+val parse
+  :  ?symbol_of_string:(string -> Symbol_id.t Or_error.t)
+  -> participant:Participant.t
+  -> string
+  -> t Or_error.t

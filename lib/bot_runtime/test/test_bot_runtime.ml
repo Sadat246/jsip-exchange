@@ -4,12 +4,12 @@ open Jsip_types
 open Jsip_fundamental
 open Jsip_bot_runtime
 
-let aapl = Symbol.of_string "AAPL"
+let aapl = Symbol_id.Private.of_int 0
 let alice = Participant.of_string "Alice"
 let bob = Participant.of_string "Bob"
 
 let oracle_config =
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     [ ( aapl
       , { Fundamental_oracle.Config.initial_price_cents = 15000
         ; volatility_cents_per_sec = 0.0
@@ -115,17 +115,17 @@ let%expect_test "feed_event forwards every event verbatim to on_event" =
   print_observed observed;
   [%expect
     {|
-    ((Best_bid_offer_update (symbol AAPL)
+    ((Best_bid_offer_update (symbol 0)
       (bbo
        ((bid (((price 14990) (size 100)))) (ask (((price 15010) (size 200)))))))
      (Fill
-      ((fill_id 1) (symbol AAPL) (price 15000) (size 50) (aggressor_order_id 1)
+      ((fill_id 1) (symbol 0) (price 15000) (size 50) (aggressor_order_id 1)
        (aggressor_client_order_id 1) (aggressor_participant Alice)
        (aggressor_side Buy) (resting_order_id 2) (resting_client_order_id 2)
        (resting_participant Bob)))
      (Order_accept (order_id 1) (participant Alice)
       (request
-       ((symbol AAPL) (participant Alice) (side Buy) (price 15000) (size 10)
+       ((symbol 0) (participant Alice) (side Buy) (price 15000) (size 10)
         (time_in_force Day) (client_order_id 1)))))
     |}];
   return ()

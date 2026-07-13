@@ -38,7 +38,8 @@ let connect_to_exchange ~host ~port =
 ;;
 
 (* Drain the exchange's stats pipe into [latest] in the background. Each
-   snapshot overwrites the previous one; we only ever serve the newest. *)
+   snapshot overwrites the previous one; we only ever serve the newest. This
+   part of the code ensures that latest actually has latest *)
 let subscribe_stats ~connection ~latest =
   match%map
     Rpc.Pipe_rpc.dispatch

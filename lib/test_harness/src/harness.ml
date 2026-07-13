@@ -5,9 +5,16 @@ open Jsip_gateway
 
 (* --- Constants --- *)
 
-let aapl = Symbol.of_string "AAPL"
-let tsla = Symbol.of_string "TSLA"
-let goog = Symbol.of_string "GOOG"
+(* Symbol NAMES, used only to build the engine — [Matching_engine.create]
+   still takes [Symbol.t]s. *)
+let symbol_names = List.map [ "AAPL"; "TSLA"; "GOOG" ] ~f:Symbol.of_string
+
+(* The wire now carries [Symbol_id.t]; [create] assigns ids by position, so
+   AAPL=0, TSLA=1, GOOG=2. Tests use these ids everywhere a symbol is needed
+   (order requests, events, book lookups). *)
+let aapl = Symbol_id.Private.of_int 0
+let tsla = Symbol_id.Private.of_int 1
+let goog = Symbol_id.Private.of_int 2
 let alice = Participant.of_string "Alice"
 let bob = Participant.of_string "Bob"
 let charlie = Participant.of_string "Charlie"
@@ -40,7 +47,7 @@ let reset_client_order_id_counter () =
   client_order_id_counter := client_order_id_offset
 ;;
 
-let create ?(symbols = [ aapl; tsla; goog ]) () =
+let create ?(symbols = symbol_names) () =
   reset_client_order_id_counter ();
   { engine = Matching_engine.create symbols }
 ;;
@@ -208,14 +215,14 @@ let submit_quiet_ ?participant t request =
 
 let print_book t symbol =
   match Matching_engine.book t.engine symbol with
-  | None -> print_endline [%string "unknown symbol %{symbol#Symbol}"]
+  | None -> print_endline [%string "unknown symbol %{symbol#Symbol_id}"]
   | Some book -> Order_book.snapshot book |> Book.to_string |> print_endline
 ;;
 
 let print_bbo t symbol =
   match Matching_engine.book t.engine symbol with
-  | None -> print_endline [%string "BBO %{symbol#Symbol}: unknown symbol"]
+  | None -> print_endline [%string "BBO %{symbol#Symbol_id}: unknown symbol"]
   | Some book ->
     let bbo = Order_book.best_bid_offer book |> Bbo.to_string in
-    print_endline [%string "BBO %{symbol#Symbol}: %{bbo}"]
+    print_endline [%string "BBO %{symbol#Symbol_id}: %{bbo}"]
 ;;

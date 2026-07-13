@@ -11,7 +11,11 @@ let description =
    latency."
 ;;
 
-let symbol = Symbol.of_string "AAPL"
+(* AAPL is the only symbol, so the engine assigns it id 0. [symbol] is the id
+   used for orders and the oracle; [symbol_name] is the name handed to the
+   engine via {!Scenario_config.symbols}. *)
+let symbol = Symbol_id.Private.of_int 0
+let symbol_name = Symbol.of_string "AAPL"
 
 (* A deliberately aggressive configuration: every 100ms the bot adds 50
    resting orders, each on a fresh price level ([level_spacing_cents = 1]),
@@ -19,7 +23,7 @@ let symbol = Symbol.of_string "AAPL"
    [orders_per_tick] or the [tick_interval] down for a gentler run. *)
 let configure () : Scenario_config.t =
   let oracle_config =
-    Symbol.Map.of_alist_exn
+    Symbol_id.Map.of_alist_exn
       [ ( symbol
         , { Fundamental_oracle.Config.initial_price_cents = 15000
           ; volatility_cents_per_sec = 5.0
@@ -38,7 +42,7 @@ let configure () : Scenario_config.t =
     }
   in
   { name
-  ; symbols = [ symbol ]
+  ; symbols = [ symbol_name ]
   ; oracle_config
   ; news = []
   ; bots =

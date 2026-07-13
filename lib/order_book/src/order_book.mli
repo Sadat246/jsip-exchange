@@ -11,10 +11,10 @@ open Jsip_types
 type t [@@deriving sexp_of]
 
 (** Create an empty order book for a given symbol. *)
-val create : Symbol.t -> t
+val create : Symbol_id.t -> t
 
 (** The symbol this book is for. *)
-val symbol : t -> Symbol.t
+val symbol : t -> Symbol_id.t
 
 (** {2 Order management} *)
 

@@ -104,12 +104,12 @@ let%expect_test "on_start seeds a symmetric ladder at the initial \
   print_ladder submitted;
   [%expect
     {|
-    BUY AAPL 10@$149.68 DAY
-    BUY AAPL 10@$149.69 DAY
-    BUY AAPL 10@$149.70 DAY
-    SELL AAPL 10@$150.30 DAY
-    SELL AAPL 10@$150.31 DAY
-    SELL AAPL 10@$150.32 DAY
+    BUY 0 10@$149.68 DAY
+    BUY 0 10@$149.69 DAY
+    BUY 0 10@$149.70 DAY
+    SELL 0 10@$150.30 DAY
+    SELL 0 10@$150.31 DAY
+    SELL 0 10@$150.32 DAY
     |}];
   return ()
 ;;
@@ -130,10 +130,10 @@ let%expect_test "the half-spread adapts to the market and re-quotes tighter" =
   [%expect
     {|
     cancelled 4, re-quoted:
-    BUY AAPL 10@$149.89 DAY
-    BUY AAPL 10@$149.90 DAY
-    SELL AAPL 10@$150.10 DAY
-    SELL AAPL 10@$150.11 DAY
+    BUY 0 10@$149.89 DAY
+    BUY 0 10@$149.90 DAY
+    SELL 0 10@$150.10 DAY
+    SELL 0 10@$150.11 DAY
     |}];
   return ()
 ;;
@@ -166,8 +166,8 @@ let%expect_test "a fill skews the re-quoted ladder by inventory" =
   [%expect
     {|
     after buying 10, re-quoted (cancelled 2):
-    BUY AAPL 10@$149.60 DAY
-    SELL AAPL 10@$149.80 DAY
+    BUY 0 10@$149.60 DAY
+    SELL 0 10@$149.80 DAY
     |}];
   return ()
 ;;
@@ -202,10 +202,10 @@ let%expect_test "the maker stands aside on a dislocated book, then recovers" =
     on a 60c-wide book: submitted 0
     after a fill while dislocated: submitted 0
     after the book recovers to 20c wide: re-quoted 4 orders
-    BUY AAPL 10@$149.89 DAY
-    BUY AAPL 10@$149.90 DAY
-    SELL AAPL 10@$150.10 DAY
-    SELL AAPL 10@$150.11 DAY
+    BUY 0 10@$149.89 DAY
+    BUY 0 10@$149.90 DAY
+    SELL 0 10@$150.10 DAY
+    SELL 0 10@$150.11 DAY
     |}];
   return ()
 ;;

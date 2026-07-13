@@ -60,16 +60,16 @@ let%expect_test "feeding sample events populates the display" =
   [%expect
     {|
     JSIP Exchange Monitor   6 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  (empty)
     ──────────────────────────────────────────────────────────────────────
-    ACCEPTED server_id=1 client_id=1 AAPL BUY 100@$150.00 DAY
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
-    CANCELLED server_id=1 client_id=1 AAPL remaining=50 reason=IOC_REMAINDER
-    REJECTED client_id=1 AAPL BUY 100@$150.00 reason=unknown symbol
-    BBO AAPL bid=$149.90 x100 ask=$150.10 x200
-    TRADE AAPL $150.00 x100
+    ACCEPTED server_id=1 client_id=1 0 BUY 100@$150.00 DAY
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    CANCELLED server_id=1 client_id=1 0 remaining=50 reason=IOC_REMAINDER
+    REJECTED client_id=1 0 BUY 100@$150.00 reason=unknown symbol
+    BBO 0 bid=$149.90 x100 ask=$150.10 x200
+    TRADE 0 $150.00 x100
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     |}]
@@ -116,27 +116,27 @@ let%expect_test "pressing 1 toggles the order-lifecycle category off and \
   [%expect
     {|
     JSIP Exchange Monitor   3 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: (1 order-lifecycle)  [2 trade]  [3 market-data]
     Substring:  (empty)
     ──────────────────────────────────────────────────────────────────────
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
-    BBO AAPL bid=$149.90 x100 ask=$150.10 x200
-    TRADE AAPL $150.00 x100
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    BBO 0 bid=$149.90 x100 ask=$150.10 x200
+    TRADE 0 $150.00 x100
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     ----- toggle 1 again -----
     JSIP Exchange Monitor   6 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  (empty)
     ──────────────────────────────────────────────────────────────────────
-    ACCEPTED server_id=1 client_id=1 AAPL BUY 100@$150.00 DAY
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
-    CANCELLED server_id=1 client_id=1 AAPL remaining=50 reason=IOC_REMAINDER
-    REJECTED client_id=1 AAPL BUY 100@$150.00 reason=unknown symbol
-    BBO AAPL bid=$149.90 x100 ask=$150.10 x200
-    TRADE AAPL $150.00 x100
+    ACCEPTED server_id=1 client_id=1 0 BUY 100@$150.00 DAY
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    CANCELLED server_id=1 client_id=1 0 remaining=50 reason=IOC_REMAINDER
+    REJECTED client_id=1 0 BUY 100@$150.00 reason=unknown symbol
+    BBO 0 bid=$149.90 x100 ask=$150.10 x200
+    TRADE 0 $150.00 x100
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     |}]
@@ -150,13 +150,13 @@ let%expect_test "pressing 2 toggles trade; 3 toggles market-data" =
   [%expect
     {|
     JSIP Exchange Monitor   3 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  (2 trade)  (3 market-data)
     Substring:  (empty)
     ──────────────────────────────────────────────────────────────────────
-    ACCEPTED server_id=1 client_id=1 AAPL BUY 100@$150.00 DAY
-    CANCELLED server_id=1 client_id=1 AAPL remaining=50 reason=IOC_REMAINDER
-    REJECTED client_id=1 AAPL BUY 100@$150.00 reason=unknown symbol
+    ACCEPTED server_id=1 client_id=1 0 BUY 100@$150.00 DAY
+    CANCELLED server_id=1 client_id=1 0 remaining=50 reason=IOC_REMAINDER
+    REJECTED client_id=1 0 BUY 100@$150.00 reason=unknown symbol
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     |}]
@@ -169,7 +169,7 @@ let%expect_test "disabling every category hides every event" =
   [%expect
     {|
     JSIP Exchange Monitor   0 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: (1 order-lifecycle)  (2 trade)  (3 market-data)
     Substring:  (empty)
     ──────────────────────────────────────────────────────────────────────
@@ -188,17 +188,17 @@ let%expect_test "pressing / enters editing mode with empty buffer" =
   [%expect
     {|
     JSIP Exchange Monitor   6 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  _  (editing)
     [editing substring]
     ──────────────────────────────────────────────────────────────────────
-    ACCEPTED server_id=1 client_id=1 AAPL BUY 100@$150.00 DAY
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
-    CANCELLED server_id=1 client_id=1 AAPL remaining=50 reason=IOC_REMAINDER
-    REJECTED client_id=1 AAPL BUY 100@$150.00 reason=unknown symbol
-    BBO AAPL bid=$149.90 x100 ask=$150.10 x200
-    TRADE AAPL $150.00 x100
+    ACCEPTED server_id=1 client_id=1 0 BUY 100@$150.00 DAY
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    CANCELLED server_id=1 client_id=1 0 remaining=50 reason=IOC_REMAINDER
+    REJECTED client_id=1 0 BUY 100@$150.00 reason=unknown symbol
+    BBO 0 bid=$149.90 x100 ask=$150.10 x200
+    TRADE 0 $150.00 x100
     ──────────────────────────────────────────────────────────────────────
     Footer:      Enter=commit  ESC=cancel  Backspace=delete  (other keys append)
     |}]
@@ -212,12 +212,12 @@ let%expect_test "typing in edit mode appends to the buffer" =
   [%expect
     {|
     JSIP Exchange Monitor   1 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  fill_  (editing)
     [editing substring]
     ──────────────────────────────────────────────────────────────────────
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
     ──────────────────────────────────────────────────────────────────────
     Footer:      Enter=commit  ESC=cancel  Backspace=delete  (other keys append)
     |}]
@@ -232,11 +232,11 @@ let%expect_test "Enter commits the substring filter and returns to browsing" =
   [%expect
     {|
     JSIP Exchange Monitor   1 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  fill
     ──────────────────────────────────────────────────────────────────────
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     |}]
@@ -251,16 +251,16 @@ let%expect_test "Escape cancels edit mode and reverts the buffer" =
   [%expect
     {|
     JSIP Exchange Monitor   6 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  (empty)
     ──────────────────────────────────────────────────────────────────────
-    ACCEPTED server_id=1 client_id=1 AAPL BUY 100@$150.00 DAY
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
-    CANCELLED server_id=1 client_id=1 AAPL remaining=50 reason=IOC_REMAINDER
-    REJECTED client_id=1 AAPL BUY 100@$150.00 reason=unknown symbol
-    BBO AAPL bid=$149.90 x100 ask=$150.10 x200
-    TRADE AAPL $150.00 x100
+    ACCEPTED server_id=1 client_id=1 0 BUY 100@$150.00 DAY
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    CANCELLED server_id=1 client_id=1 0 remaining=50 reason=IOC_REMAINDER
+    REJECTED client_id=1 0 BUY 100@$150.00 reason=unknown symbol
+    BBO 0 bid=$149.90 x100 ask=$150.10 x200
+    TRADE 0 $150.00 x100
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     |}]
@@ -276,12 +276,12 @@ let%expect_test "Backspace in edit mode pops the last character" =
   [%expect
     {|
     JSIP Exchange Monitor   1 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  fi_  (editing)
     [editing substring]
     ──────────────────────────────────────────────────────────────────────
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
     ──────────────────────────────────────────────────────────────────────
     Footer:      Enter=commit  ESC=cancel  Backspace=delete  (other keys append)
     |}]
@@ -304,25 +304,25 @@ let%expect_test "pressing r clears every filter back to defaults" =
     {|
     ----- after toggling and committing 'fill' -----
     JSIP Exchange Monitor   1 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: (1 order-lifecycle)  [2 trade]  [3 market-data]
     Substring:  fill
     ──────────────────────────────────────────────────────────────────────
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     ----- after r -----
     JSIP Exchange Monitor   6 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  (empty)
     ──────────────────────────────────────────────────────────────────────
-    ACCEPTED server_id=1 client_id=1 AAPL BUY 100@$150.00 DAY
-    FILL fill_id=1 AAPL $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
-    CANCELLED server_id=1 client_id=1 AAPL remaining=50 reason=IOC_REMAINDER
-    REJECTED client_id=1 AAPL BUY 100@$150.00 reason=unknown symbol
-    BBO AAPL bid=$149.90 x100 ask=$150.10 x200
-    TRADE AAPL $150.00 x100
+    ACCEPTED server_id=1 client_id=1 0 BUY 100@$150.00 DAY
+    FILL fill_id=1 0 $150.00 x100 aggressor=[server_id=2 client_id=2 Alice] BUY resting=[server_id=1 client_id=1 Bob]
+    CANCELLED server_id=1 client_id=1 0 remaining=50 reason=IOC_REMAINDER
+    REJECTED client_id=1 0 BUY 100@$150.00 reason=unknown symbol
+    BBO 0 bid=$149.90 x100 ask=$150.10 x200
+    TRADE 0 $150.00 x100
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     |}]
@@ -341,11 +341,11 @@ let%expect_test "counter reflects visible / total even when filters are \
   [%expect
     {|
     JSIP Exchange Monitor   1 of 6 events   auto-scroll ↓
-    BBO:        AAPL: $149.90 x100 / $150.10 x200
+    BBO:        0: $149.90 x100 / $150.10 x200
     Categories: [1 order-lifecycle]  [2 trade]  [3 market-data]
     Substring:  bbo
     ──────────────────────────────────────────────────────────────────────
-    BBO AAPL bid=$149.90 x100 ask=$150.10 x200
+    BBO 0 bid=$149.90 x100 ask=$150.10 x200
     ──────────────────────────────────────────────────────────────────────
     Footer:      q=quit  r=reset  1-3=categories  /=substring  a=auto-scroll
     |}]

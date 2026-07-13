@@ -26,7 +26,7 @@ module Config : sig
       side, one cent further out each, and every quote carries
       [size_per_level] shares. *)
   val create
-    :  symbol:Symbol.t
+    :  symbol:Symbol_id.t
     -> half_spread_cents:int
     -> size_per_level:int
     -> num_levels:int

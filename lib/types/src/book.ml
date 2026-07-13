@@ -1,7 +1,7 @@
 open! Core
 
 type t =
-  { symbol : Symbol.t
+  { symbol : Symbol_id.t
   ; bids : Level.t list
   ; asks : Level.t list
   ; bbo : Bbo.t
@@ -21,7 +21,7 @@ let to_string { symbol; bids; asks; bbo } =
   in
   String.concat
     ~sep:"\n"
-    [ [%string "=== %{symbol#Symbol} ==="]
+    [ [%string "=== %{symbol#Symbol_id} ==="]
     ; format_side "BIDS" bids
     ; format_side "ASKS" asks
     ; [%string "  BBO: %{bbo#Bbo}"]

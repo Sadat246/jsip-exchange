@@ -11,7 +11,7 @@ module Config = struct
     }
   [@@deriving sexp_of]
 
-  type t = symbol_config Symbol.Map.t [@@deriving sexp_of]
+  type t = symbol_config Symbol_id.Map.t [@@deriving sexp_of]
 end
 
 (* Box-Muller: two independent uniform(0, 1) samples produce one standard
@@ -34,7 +34,7 @@ type symbol_state =
   ; rng : Splittable_random.t
   }
 
-type t = symbol_state Symbol.Map.t
+type t = symbol_state Symbol_id.Map.t
 
 (* The simulated fundamental is clamped to a strictly-positive floor so it
    can never be zero or negative — that would produce nonsensical prices and
@@ -57,7 +57,7 @@ let symbol_state_exn t symbol =
   | None ->
     raise_s
       [%message
-        "Fundamental_oracle: symbol not in config" (symbol : Symbol.t)]
+        "Fundamental_oracle: symbol not in config" (symbol : Symbol_id.t)]
 ;;
 
 let price t symbol =

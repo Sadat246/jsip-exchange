@@ -19,7 +19,7 @@ let string_of_price_opt = function
 module Summary = struct
   module Per_symbol = struct
     type t =
-      { symbol : Symbol.t
+      { symbol : Symbol_id.t
       ; inventory : int
       ; average_entry_price : Price.t option
       ; reference_price : Price.t option
@@ -53,7 +53,7 @@ module Summary = struct
             }
           ->
           [%string
-            "  %{symbol#Symbol} inv=%{inventory#Int} \
+            "  %{symbol#Symbol_id} inv=%{inventory#Int} \
              avg=%{string_of_price_opt average_entry_price} \
              ref=%{string_of_price_opt reference_price} realized=%{dollars \
              realized_cents} unrealized=%{dollars unrealized_cents}"])
@@ -162,19 +162,21 @@ module Position = struct
 end
 
 type t =
-  { positions : Position.t Symbol.Map.t Participant.Map.t
-  ; reference_prices : Price.t Symbol.Map.t
+  { positions : Position.t Symbol_id.Map.t Participant.Map.t
+  ; reference_prices : Price.t Symbol_id.Map.t
   }
 [@@deriving sexp_of]
 
 let empty =
-  { positions = Participant.Map.empty; reference_prices = Symbol.Map.empty }
+  { positions = Participant.Map.empty
+  ; reference_prices = Symbol_id.Map.empty
+  }
 ;;
 
 let update_position t ~participant ~symbol ~f =
   let by_symbol =
     Map.find t.positions participant
-    |> Option.value ~default:Symbol.Map.empty
+    |> Option.value ~default:Symbol_id.Map.empty
   in
   let position =
     Map.find by_symbol symbol |> Option.value ~default:Position.empty
@@ -212,7 +214,7 @@ let apply_trade_report t ~symbol ~price =
 let summary t participant =
   let by_symbol =
     Map.find t.positions participant
-    |> Option.value ~default:Symbol.Map.empty
+    |> Option.value ~default:Symbol_id.Map.empty
     |> Map.to_alist
     |> List.map ~f:(fun (symbol, position) ->
       let reference_price = Map.find t.reference_prices symbol in

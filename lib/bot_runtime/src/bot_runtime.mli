@@ -25,7 +25,7 @@ module Context : sig
   val participant : t -> Participant.t
 
   (** Current fundamental price from the oracle. *)
-  val fundamental : t -> Symbol.t -> Price.t
+  val fundamental : t -> Symbol_id.t -> Price.t
 
   (** Bot-private random-number source for stochastic strategies. *)
   val random : t -> Splittable_random.t

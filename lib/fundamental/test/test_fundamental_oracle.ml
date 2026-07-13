@@ -2,11 +2,11 @@ open! Core
 open Jsip_types
 open Jsip_fundamental
 
-let aapl = Symbol.of_string "AAPL"
-let tsla = Symbol.of_string "TSLA"
+let aapl = Symbol_id.Private.of_int 0
+let tsla = Symbol_id.Private.of_int 1
 
 let calm_config =
-  Symbol.Map.of_alist_exn
+  Symbol_id.Map.of_alist_exn
     [ ( aapl
       , { Fundamental_oracle.Config.initial_price_cents = 15000
         ; volatility_cents_per_sec = 5.0
@@ -78,7 +78,7 @@ let%expect_test "price never falls below 1 cent under heavy negative shocks" =
 
 let%expect_test "no-volatility, no-reversion config produces a flat line" =
   let flat_config =
-    Symbol.Map.of_alist_exn
+    Symbol_id.Map.of_alist_exn
       [ ( aapl
         , { Fundamental_oracle.Config.initial_price_cents = 15000
           ; volatility_cents_per_sec = 0.0

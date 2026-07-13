@@ -23,21 +23,21 @@ let%expect_test "noise trader submits a randomized stream of orders" =
   print_submitted submitted;
   [%expect
     {|
-    BUY AAPL 8@$149.85 DAY
-    SELL AAPL 10@$149.89 DAY
-    SELL AAPL 10@$149.86 IOC
-    SELL AAPL 11@$150.12 DAY
-    SELL AAPL 8@$149.86 DAY
-    BUY AAPL 11@$149.89 DAY
-    BUY AAPL 12@$149.89 IOC
-    SELL AAPL 11@$150.13 IOC
-    BUY AAPL 10@$150.11 DAY
-    SELL AAPL 9@$149.88 DAY
-    BUY AAPL 11@$150.15 IOC
-    BUY AAPL 11@$150.12 IOC
-    SELL AAPL 8@$149.89 IOC
-    BUY AAPL 9@$149.86 DAY
-    BUY AAPL 11@$149.88 DAY
+    BUY 0 8@$149.85 DAY
+    SELL 0 10@$149.89 DAY
+    SELL 0 10@$149.86 IOC
+    SELL 0 11@$150.12 DAY
+    SELL 0 8@$149.86 DAY
+    BUY 0 11@$149.89 DAY
+    BUY 0 12@$149.89 IOC
+    SELL 0 11@$150.13 IOC
+    BUY 0 10@$150.11 DAY
+    SELL 0 9@$149.88 DAY
+    BUY 0 11@$150.15 IOC
+    BUY 0 11@$150.12 IOC
+    SELL 0 8@$149.89 IOC
+    BUY 0 9@$149.86 DAY
+    BUY 0 11@$149.88 DAY
     |}];
   return ()
 ;;

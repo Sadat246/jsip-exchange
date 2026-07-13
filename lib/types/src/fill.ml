@@ -2,7 +2,7 @@ open! Core
 
 type t =
   { fill_id : int
-  ; symbol : Symbol.t
+  ; symbol : Symbol_id.t
   ; price : Price.t
   ; size : Size.t
   ; aggressor_order_id : Order_id.t
@@ -25,7 +25,7 @@ let to_string t =
   sprintf
     "fill_id=%d %s %s x%d aggressor=[%s %s] %s resting=[%s %s]"
     t.fill_id
-    (Symbol.to_string t.symbol)
+    (Symbol_id.to_string t.symbol)
     (Price.to_string_dollar t.price)
     (Size.to_int t.size)
     (format_ids

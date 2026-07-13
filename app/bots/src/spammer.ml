@@ -55,7 +55,7 @@ module Config = struct
   [@@deriving sexp_of]
 
   type pump_and_dump_params =
-    { target_symbol : Symbol.t
+    { target_symbol : Symbol_id.t
         (* The single symbol to manipulate. Concentrating every clip on one
            symbol is what moves its price; spreading across many would dilute
            the impact to nothing. *)
@@ -128,17 +128,17 @@ module Config = struct
     | Pump_and_dump of pump_and_dump_params
 
   type t =
-    { symbols : Symbol.t list
+    { symbols : Symbol_id.t list
     ; behavior : behavior
     ; generator : Client_order_id.Generator.t
-    ; bbo_cache : Bbo.t Symbol.Table.t
+    ; bbo_cache : Bbo.t Symbol_id.Table.t
     }
 
   let create ~symbols ~behavior =
     { symbols
     ; behavior
     ; generator = Client_order_id.Generator.create ()
-    ; bbo_cache = Symbol.Table.create ()
+    ; bbo_cache = Symbol_id.Table.create ()
     }
   ;;
 end
@@ -397,14 +397,14 @@ let on_event (config : Config.t) context (event : Exchange_event.t) =
    | Pump_and_dump params ->
      (match event with
       | Best_bid_offer_update { symbol; bbo } ->
-        if Symbol.equal symbol params.target_symbol
+        if Symbol_id.equal symbol params.target_symbol
            && Option.is_none params.anchor_cents
         then (
           match observed_mid_of_bbo bbo with
           | Some mid -> params.anchor_cents <- Some mid
           | None -> ())
       | Fill fill ->
-        if Symbol.equal fill.symbol params.target_symbol
+        if Symbol_id.equal fill.symbol params.target_symbol
         then apply_pump_fill context params fill
       | Order_accept _ | Order_cancel _ | Order_reject _ | Cancel_reject _
       | Trade_report _ ->
